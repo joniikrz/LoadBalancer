@@ -1,0 +1,2885 @@
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Udhëzuesi i Plotë i Load Balancing - Interaktiv</title>
+    
+    <!-- Google Fonts: Inter & Fira Code -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- html2pdf.js CDN for client-side PDF compilation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <style>
+        /* ==========================================================================
+           1. SISTEMI I DIZAJNIT & TOKENAT (CSS VARIABLES)
+           ========================================================================== */
+        :root {
+            /* Palette e ngjyrave Space-Tech Dark Theme */
+            --bg-main: #0b0f19;
+            --bg-surface: #131b2e;
+            --bg-surface-hover: #1e294b;
+            --bg-card: rgba(20, 27, 47, 0.85);
+            --border-color: rgba(56, 189, 248, 0.1);
+            --border-hover: rgba(56, 189, 248, 0.25);
+            
+            /* Ngjyrat e aksenteve */
+            --primary: #38bdf8; /* Cyber Neon Blue */
+            --primary-glow: rgba(56, 189, 248, 0.3);
+            --secondary: #a855f7; /* Electric Purple */
+            --secondary-glow: rgba(168, 85, 247, 0.3);
+            --accent: #6366f1; /* Neon Indigo */
+            --success: #10b981; /* Emerald Success */
+            --warning: #f59e0b; /* Amber Alert */
+            --danger: #ef4444; /* Ruby Red */
+            
+            /* Teksti */
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            
+            /* Tipografia */
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --font-mono: 'Fira Code', monospace;
+            
+            /* Efektet */
+            --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.2);
+            --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+            --shadow-neon: 0 0 20px rgba(56, 189, 248, 0.2);
+            --radius-sm: 6px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* ==========================================================================
+           2. SHTYLES TË PËRGJITHSHME & RESETS
+           ========================================================================== */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            line-height: 1.6;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(56, 189, 248, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 80% 80%, rgba(168, 85, 247, 0.05) 0%, transparent 40%);
+            background-attachment: fixed;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-main);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--bg-surface-hover);
+            border-radius: var(--radius-sm);
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
+
+        /* Badge stilizim */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border-radius: 9999px;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+        .badge-cyan { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.2); }
+        .badge-purple { background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.2); }
+        .badge-emerald { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.2); }
+        .badge-amber { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.2); }
+        .badge-danger { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); }
+
+        /* ==========================================================================
+           3. HEADER & HERO SECTION
+           ========================================================================== */
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(11, 15, 25, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 2rem;
+            padding: 1rem 0;
+            transition: var(--transition);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: var(--text-primary);
+            padding: 0.5rem;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+        }
+
+        .logo-title h1 {
+            font-size: 1.25rem;
+            font-weight: 800;
+            background: linear-gradient(to right, #ffffff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .logo-title p {
+            font-size: 0.75rem;
+            color: var(--primary);
+            font-weight: 500;
+            letter-spacing: 0.05em;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1.2rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: var(--transition);
+            border: 1px solid transparent;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: #0b0f19;
+            box-shadow: 0 4px 14px rgba(56, 189, 248, 0.3);
+            border: none;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(56, 189, 248, 0.5);
+            filter: brightness(1.1);
+        }
+
+        .btn-secondary {
+            background: rgba(30, 41, 59, 0.6);
+            color: var(--text-primary);
+            border-color: var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-surface-hover);
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        /* Hero Callout */
+        .hero {
+            background: linear-gradient(135deg, rgba(19, 27, 46, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 2.5rem;
+            margin-bottom: 2.5rem;
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(to right, var(--primary), var(--secondary), var(--accent));
+        }
+
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        @media (max-width: 768px) {
+            .hero-grid {
+                grid-template-columns: 1fr;
+            }
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+        }
+
+        .hero-text h2 {
+            font-size: 2.25rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            letter-spacing: -0.02em;
+        }
+
+        .hero-text p {
+            color: var(--text-secondary);
+            font-size: 1.05rem;
+            margin-bottom: 1.5rem;
+            max-width: 800px;
+        }
+
+        /* ==========================================================================
+           4. TABELA KRAHASUESE INTERAKTIVE
+           ========================================================================== */
+        .section-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            margin-bottom: 2.5rem;
+            box-shadow: var(--shadow-md);
+            transition: var(--transition);
+        }
+
+        .section-card:hover {
+            border-color: rgba(56, 189, 248, 0.2);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .section-title i {
+            color: var(--primary);
+        }
+
+        .section-title h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        /* Kontrollet e tabelës */
+        .table-controls {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            width: 100%;
+            max-width: 450px;
+        }
+
+        .search-wrapper {
+            position: relative;
+            flex-grow: 1;
+        }
+
+        .search-wrapper input {
+            width: 100%;
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid var(--border-color);
+            padding: 0.5rem 1rem 0.5rem 2.5rem;
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            outline: none;
+            transition: var(--transition);
+        }
+
+        .search-wrapper input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.15);
+        }
+
+        .search-wrapper i {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        /* Tabela elemente */
+        .table-container {
+            overflow-x: auto;
+            border-radius: var(--radius-md);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+
+        th, td {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        th {
+            background-color: rgba(30, 41, 59, 0.8);
+            font-weight: 600;
+            color: var(--text-primary);
+            letter-spacing: 0.02em;
+            position: sticky;
+            top: 0;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+        }
+
+        /* Kolonat specifik */
+        th:first-child, td:first-child {
+            font-weight: 600;
+            color: var(--primary);
+            background-color: rgba(19, 27, 46, 0.4);
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            width: 220px;
+        }
+
+        tr:hover {
+            background-color: rgba(30, 41, 59, 0.3);
+        }
+
+        tr.highlighted {
+            background-color: rgba(56, 189, 248, 0.05);
+        }
+
+        td {
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* Column highlighters on click */
+        .col-highlight {
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .col-highlight:hover {
+            background-color: rgba(168, 85, 247, 0.05);
+        }
+
+        .active-column {
+            background-color: rgba(56, 189, 248, 0.05) !important;
+            border-left: 1px dashed rgba(56, 189, 248, 0.2);
+            border-right: 1px dashed rgba(56, 189, 248, 0.2);
+        }
+
+        /* Alert Callout */
+        .alert {
+            display: flex;
+            gap: 1rem;
+            background: rgba(30, 41, 59, 0.4);
+            border-left: 4px solid var(--accent);
+            padding: 1.25rem;
+            border-radius: 0 var(--radius-md) var(--radius-md) 0;
+            margin-top: 1.5rem;
+            font-size: 0.875rem;
+        }
+
+        .alert-info { border-left-color: var(--primary); background: rgba(56, 189, 248, 0.05); }
+        .alert-warning { border-left-color: var(--warning); background: rgba(245, 158, 11, 0.05); }
+        .alert-danger { border-left-color: var(--danger); background: rgba(239, 68, 68, 0.05); }
+        
+        .alert i {
+            flex-shrink: 0;
+            margin-top: 0.1rem;
+        }
+        .alert-info i { color: var(--primary); }
+        .alert-warning i { color: var(--warning); }
+
+        /* ==========================================================================
+           5. PLAYGROUND INTERAKTIV I TOPOLOGJIVE (SVG ENGINE)
+           ========================================================================== */
+        .playground-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 1024px) {
+            .playground-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Menu selektimi i topologjive */
+        .topology-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            background: rgba(30, 41, 59, 0.4);
+            padding: 0.4rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+        }
+
+        .tab-btn {
+            background: transparent;
+            color: var(--text-secondary);
+            border: none;
+            padding: 0.6rem 1rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .tab-btn.active {
+            color: #0b0f19;
+            background: var(--primary);
+            box-shadow: 0 2px 8px rgba(56, 189, 248, 0.4);
+        }
+
+        /* Visualizer Card */
+        .visualizer-card {
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-height: 480px;
+        }
+
+        .visualizer-header {
+            background: rgba(30, 41, 59, 0.5);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 0.75rem 1.25rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--success);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--success);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.9); opacity: 0.6; }
+            50% { transform: scale(1.15); opacity: 1; }
+            100% { transform: scale(0.9); opacity: 0.6; }
+        }
+
+        /* SVG Rrjeti */
+        .svg-container {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            position: relative;
+            background-image: 
+                radial-gradient(var(--border-color) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        svg.network-canvas {
+            width: 100%;
+            height: 380px;
+            max-width: 650px;
+        }
+
+        /* Stilizimi i nyjeve SVG */
+        .svg-node {
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .svg-node:hover .node-bg {
+            stroke: var(--primary);
+            fill: var(--bg-surface-hover);
+            filter: drop-shadow(0 0 8px var(--primary-glow));
+        }
+
+        .node-bg {
+            fill: #1e293b;
+            stroke: rgba(255, 255, 255, 0.15);
+            stroke-width: 2;
+            transition: var(--transition);
+            rx: 12px;
+        }
+
+        .node-bg-active {
+            stroke: var(--primary) !important;
+            fill: rgba(56, 189, 248, 0.1) !important;
+            filter: drop-shadow(0 0 12px var(--primary-glow));
+        }
+
+        .node-bg-rs {
+            stroke: rgba(168, 85, 247, 0.3);
+        }
+        .svg-node:hover .node-bg-rs {
+            stroke: var(--secondary);
+            filter: drop-shadow(0 0 8px var(--secondary-glow));
+        }
+
+        .node-title {
+            fill: var(--text-primary);
+            font-family: var(--font-sans);
+            font-size: 11px;
+            font-weight: 700;
+            text-anchor: middle;
+        }
+
+        .node-subtitle {
+            fill: var(--text-secondary);
+            font-family: var(--font-mono);
+            font-size: 9px;
+            text-anchor: middle;
+        }
+
+        /* Lidhjet SVG (Network Cables) */
+        .svg-link {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.1);
+            stroke-width: 3;
+            stroke-linecap: round;
+            transition: var(--transition);
+        }
+
+        .svg-link-active {
+            stroke: rgba(56, 189, 248, 0.4);
+            stroke-dasharray: 6 4;
+            animation: dash 20s linear infinite;
+        }
+
+        @keyframes dash {
+            to { stroke-dashoffset: -1000; }
+        }
+
+        /* Packet Dot */
+        .packet-dot {
+            fill: var(--primary);
+            filter: drop-shadow(0 0 10px var(--primary));
+            visibility: hidden;
+        }
+
+        .packet-dot-return {
+            fill: var(--secondary);
+            filter: drop-shadow(0 0 10px var(--secondary));
+        }
+
+        /* Panel i Kontrollit të Simulatorit */
+        .simulator-controls {
+            background: rgba(30, 41, 59, 0.8);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 1rem 1.25rem;
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .sim-btn {
+            background: #1e293b;
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+
+        .sim-btn:hover:not(:disabled) {
+            border-color: var(--primary);
+            background: var(--bg-surface-hover);
+            transform: translateY(-1px);
+        }
+
+        .sim-btn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .sim-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .sim-btn-accent {
+            background: var(--primary);
+            color: #0b0f19;
+            border: none;
+            box-shadow: 0 2px 10px rgba(56, 189, 248, 0.2);
+        }
+        .sim-btn-accent:hover:not(:disabled) {
+            background: #7dd3fc;
+            box-shadow: 0 4px 15px rgba(56, 189, 248, 0.4);
+        }
+
+        .flow-description {
+            flex-grow: 1;
+            font-size: 0.825rem;
+            color: var(--text-secondary);
+            background: rgba(11, 15, 25, 0.6);
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-sm);
+            border-left: 3px solid var(--primary);
+            min-height: 38px;
+            display: flex;
+            align-items: center;
+        }
+
+        /* ==========================================================================
+           6. INSPEKTORI I HEADER-AVE TË PAKETAVE (REAL-TIME MONITOR)
+           ========================================================================== */
+        .monitor-card {
+            background: rgba(19, 27, 46, 0.85);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            box-shadow: var(--shadow-md);
+        }
+
+        .monitor-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 0.75rem;
+        }
+
+        .monitor-title h4 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .monitor-title h4 i {
+            color: var(--secondary);
+        }
+
+        .packet-stage-badge {
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+            background: rgba(168, 85, 247, 0.1);
+            color: #d8b4fe;
+            border: 1px solid rgba(168, 85, 247, 0.2);
+        }
+
+        /* Layer Frame */
+        .layer-box {
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: var(--radius-md);
+            background: rgba(11, 15, 25, 0.5);
+            overflow: hidden;
+            transition: var(--transition);
+        }
+
+        .layer-box.active-layer {
+            border-color: var(--primary);
+            box-shadow: 0 0 12px rgba(56, 189, 248, 0.1);
+        }
+
+        .layer-header {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .layer-header-l2 { background: rgba(56, 189, 248, 0.1); }
+        .layer-header-l3 { background: rgba(168, 85, 247, 0.1); }
+        .layer-header-l4 { background: rgba(99, 102, 241, 0.1); }
+
+        .layer-content {
+            padding: 0.75rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+
+        .header-field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+            padding: 0.4rem;
+            border-radius: var(--radius-sm);
+            background: rgba(30, 41, 59, 0.4);
+            border: 1px solid transparent;
+            transition: var(--transition);
+        }
+
+        .header-field.flashing {
+            animation: fieldFlash 0.8s ease;
+            background: rgba(56, 189, 248, 0.15) !important;
+            border-color: var(--primary) !important;
+        }
+
+        @keyframes fieldFlash {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        .field-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .field-value {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            word-break: break-all;
+        }
+
+        .field-value.highlighted-value {
+            color: var(--primary);
+        }
+        .field-value.highlighted-value-secondary {
+            color: var(--secondary);
+        }
+
+        /* L7 TCP state / proxy visualization */
+        .l7-payload {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: #67e8f9;
+            background: rgba(15, 118, 110, 0.1);
+            padding: 0.5rem;
+            border-radius: var(--radius-sm);
+            border: 1px dashed rgba(6, 182, 212, 0.2);
+            text-align: center;
+        }
+
+        /* ==========================================================================
+           7. SEKSIONI I DETAJEVE TË MODEVE (ACCORDIONS / CARDS)
+           ========================================================================== */
+        .grid-2col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .grid-2col {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .mode-detail-card {
+            background: rgba(30, 41, 59, 0.4);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 1.5rem;
+            transition: var(--transition);
+        }
+
+        .mode-detail-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--primary);
+            background: rgba(30, 41, 59, 0.6);
+        }
+
+        .mode-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 0.5rem;
+        }
+
+        .mode-card-header h4 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .mode-detail-card p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+
+        .feature-bullets {
+            list-style: none;
+            font-size: 0.85rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .feature-bullets li {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+        }
+
+        .feature-bullets li i {
+            color: var(--success);
+            flex-shrink: 0;
+            margin-top: 0.15rem;
+        }
+
+        .feature-bullets li.bullet-con {
+            color: var(--text-secondary);
+        }
+        .feature-bullets li.bullet-con i {
+            color: var(--danger);
+        }
+
+        /* ==========================================================================
+           8. PANELI I KONFIGURIMEVE TË SERVERIT (TABBED CODE BOX)
+           ========================================================================== */
+        .config-wrapper {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 1.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            background: rgba(15, 23, 42, 0.6);
+        }
+
+        @media (max-width: 768px) {
+            .config-wrapper {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .config-sidebar {
+            background: rgba(30, 41, 59, 0.3);
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .config-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .config-btn:hover {
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-primary);
+        }
+
+        .config-btn.active {
+            background: rgba(56, 189, 248, 0.1);
+            color: var(--primary);
+            border-left: 3px solid var(--primary);
+        }
+
+        .config-viewer {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            position: relative;
+        }
+
+        .config-viewer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .config-meta {
+            font-size: 0.85rem;
+        }
+        
+        .config-meta span {
+            font-family: var(--font-mono);
+            color: var(--primary);
+            background: rgba(56, 189, 248, 0.1);
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+        }
+
+        .code-container {
+            position: relative;
+            background: #090d16;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+        }
+
+        pre {
+            margin: 0;
+            padding: 1.25rem;
+            overflow-x: auto;
+        }
+
+        code {
+            font-family: var(--font-mono);
+            font-size: 0.825rem;
+            color: #e2e8f0;
+            line-height: 1.5;
+        }
+
+        .btn-copy {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-secondary);
+            padding: 0.4rem 0.75rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            backdrop-filter: blur(4px);
+        }
+
+        .btn-copy:hover {
+            color: var(--text-primary);
+            border-color: var(--primary);
+            background: #1e293b;
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--success);
+            color: #0b0f19;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius-md);
+            font-weight: 700;
+            font-size: 0.875rem;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            z-index: 1000;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* ==========================================================================
+           9. PDF PRINT READY MODE (WHITE PAPER THEME)
+           ========================================================================== */
+        /* Ky seksion përdoret për të krijuar një strukturë të plotë për PDF-në që fshihet në faqe, 
+           por zëvendëson përmbajtjen gjatë eksportimit në PDF */
+        #pdf-static-content {
+            display: none;
+        }
+
+        @media print {
+            body {
+                background: #ffffff !important;
+                color: #0f172a !important;
+                font-size: 11pt !important;
+            }
+
+            header, .hero, .topology-tabs, .simulator-controls, .table-controls, .action-buttons, .config-sidebar, .btn-copy, .toast {
+                display: none !important;
+            }
+
+            .container {
+                max-width: 100% !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+
+            .section-card {
+                background: #ffffff !important;
+                border: none !important;
+                border-bottom: 2px solid #e2e8f0 !important;
+                padding: 1rem 0 !important;
+                page-break-inside: avoid !important;
+            }
+
+            table {
+                font-size: 9.5pt !important;
+                color: #0f172a !important;
+            }
+
+            th {
+                background: #f1f5f9 !important;
+                color: #0f172a !important;
+                border-bottom: 2px solid #cbd5e1 !important;
+            }
+
+            td {
+                color: #334155 !important;
+                border-bottom: 1px solid #e2e8f0 !important;
+            }
+
+            th:first-child, td:first-child {
+                background: #f8fafc !important;
+                color: #0f172a !important;
+                border-right: 1px solid #e2e8f0 !important;
+            }
+
+            .mode-detail-card {
+                background: #ffffff !important;
+                border: 1px solid #e2e8f0 !important;
+                page-break-inside: avoid !important;
+            }
+
+            .alert {
+                background: #f8fafc !important;
+                border-left: 4px solid #0284c7 !important;
+                color: #0f172a !important;
+            }
+
+            .code-container {
+                background: #f8fafc !important;
+                border: 1px solid #cbd5e1 !important;
+            }
+
+            code {
+                color: #0f172a !important;
+            }
+
+            /* Bëj të dukshme të gjitha pjesët statike të PDF-së kur shtypet */
+            #pdf-static-content {
+                display: block !important;
+            }
+
+            .interactive-only {
+                display: none !important;
+            }
+            
+            .page-break {
+                page-break-before: always !important;
+                height: 0;
+            }
+        }
+
+        /* Klasat speciale që aplikohen gjatë gjenerimit nga JS me html2pdf */
+        body.pdf-mode {
+            background: #ffffff !important;
+            color: #0f172a !important;
+        }
+
+        body.pdf-mode .interactive-only {
+            display: none !important;
+        }
+
+        body.pdf-mode #pdf-static-content {
+            display: block !important;
+        }
+
+        body.pdf-mode .section-card {
+            background: #ffffff !important;
+            border: 1px solid #cbd5e1 !important;
+            color: #0f172a !important;
+            box-shadow: none !important;
+            margin-bottom: 1.5rem !important;
+            padding: 1.5rem !important;
+        }
+
+        body.pdf-mode table {
+            color: #0f172a !important;
+        }
+
+        body.pdf-mode th {
+            background: #f1f5f9 !important;
+            color: #0f172a !important;
+            border-bottom: 2px solid #cbd5e1 !important;
+        }
+
+        body.pdf-mode td {
+            color: #334155 !important;
+            border-bottom: 1px solid #e2e8f0 !important;
+        }
+
+        body.pdf-mode th:first-child, body.pdf-mode td:first-child {
+            background: #f8fafc !important;
+            color: #0f172a !important;
+        }
+
+        body.pdf-mode .alert {
+            background: #f8fafc !important;
+            border-left: 4px solid #0f172a !important;
+            color: #0f172a !important;
+        }
+
+        body.pdf-mode code {
+            color: #0f172a !important;
+        }
+
+        body.pdf-mode .code-container {
+            background: #f8fafc !important;
+            border: 1px solid #e2e8f0 !important;
+        }
+
+        body.pdf-mode .pdf-svg-box {
+            background: #f8fafc !important;
+            border: 1px solid #e2e8f0 !important;
+            padding: 1rem;
+            margin-top: 1rem;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+        }
+
+        body.pdf-mode .pdf-svg-box svg {
+            max-width: 500px;
+            height: 250px;
+        }
+
+        body.pdf-mode .pdf-svg-box .node-bg {
+            fill: #f1f5f9 !important;
+            stroke: #94a3b8 !important;
+        }
+
+        body.pdf-mode .pdf-svg-box .node-title {
+            fill: #0f172a !important;
+        }
+        
+        body.pdf-mode .pdf-svg-box .node-subtitle {
+            fill: #475569 !important;
+        }
+
+        body.pdf-mode .pdf-svg-box .svg-link {
+            stroke: #cbd5e1 !important;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- NAV BAR INTERAKTIVE -->
+    <header>
+        <div class="container header-content">
+            <div class="logo-area">
+                <div class="logo-icon">
+                    <i data-lucide="network"></i>
+                </div>
+                <div class="logo-title">
+                    <h1>Load Balancing</h1>
+                    <p>ANALIZA E PLOTË INTERAKTIVE E TOPOLOGJIVE</p>
+                </div>
+            </div>
+            
+            <div class="action-buttons">
+                <button class="btn btn-secondary" onclick="window.print()">
+                    <i data-lucide="printer"></i> Shtyp
+                </button>
+                <button class="btn btn-primary" onclick="downloadPDF()">
+                    <i data-lucide="file-down"></i> Shkarko PDF
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container" id="main-content">
+        
+        <!-- HERO CALLOUT -->
+        <div class="hero interactive-only">
+            <div class="hero-grid">
+                <div class="hero-text">
+                    <span class="badge badge-cyan" style="margin-bottom: 0.75rem;">Layer 4 & Layer 7 Deep-Dive</span>
+                    <h2>Udhëzuesi i Plotë i Topologjive dhe Konfigurimeve të Load Balancing</h2>
+                    <p>
+                        Ky udhëzues ofron një analizë të thelluar të katër metodave kryesore të shpërndarjes së ngarkesës (Load Balancing) në Rrjetin e Layer 4 dhe Layer 7: <strong>Layer 4 DR</strong>, <strong>Layer 4 NAT</strong>, <strong>Layer 4 SNAT</strong>, dhe <strong>Layer 7 SNAT</strong>. Eksploroni topologjitë <em>One-Arm</em> dhe <em>Two-Arm</em> përmes simulatorit interaktiv të paketave me vizualizim të header-ave në kohë reale.
+                    </p>
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                        <a href="#tabela" class="btn btn-secondary btn-sm" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;"><i data-lucide="table"></i> Tabela Krahasuese</a>
+                        <a href="#playground" class="btn btn-secondary btn-sm" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;"><i data-lucide="play-circle"></i> Simulatori i Paketave</a>
+                        <a href="#konfigurime" class="btn btn-secondary btn-sm" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;"><i data-lucide="code"></i> Konfigurime Serveri</a>
+                    </div>
+                </div>
+                <div style="text-align: center;" class="interactive-only">
+                    <i data-lucide="server-cog" style="width: 120px; height: 120px; color: var(--primary); opacity: 0.85; filter: drop-shadow(0 0 25px rgba(56, 189, 248, 0.35));"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- 1. TABELA KRAHASUESE INTERAKTIVE -->
+        <div class="section-card" id="tabela">
+            <div class="section-header">
+                <div class="section-title">
+                    <i data-lucide="table" style="width: 24px; height: 24px;"></i>
+                    <h3>1. Tabela Krahasuese e Modeve të Load Balancing</h3>
+                </div>
+                <div class="table-controls interactive-only">
+                    <div class="search-wrapper">
+                        <i data-lucide="search"></i>
+                        <input type="text" id="table-search" placeholder="Filtro karakteristikat..." onkeyup="filterTable()">
+                    </div>
+                </div>
+            </div>
+            
+            <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 1.5rem;" class="interactive-only">
+                Klikoni mbi emrat e modeve (kokat e kolonave) për t'i ndriçuar dhe krahasuar ato më lehtë.
+            </p>
+
+            <div class="table-container">
+                <table id="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Karakteristika</th>
+                            <th class="col-highlight" onclick="highlightColumn(1)">Layer 4 DR (Direct Routing)</th>
+                            <th class="col-highlight" onclick="highlightColumn(2)">Layer 4 NAT Mode</th>
+                            <th class="col-highlight" onclick="highlightColumn(3)">Layer 4 SNAT Mode</th>
+                            <th class="col-highlight" onclick="highlightColumn(4)">Layer 7 SNAT Mode</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Performanca</td>
+                            <td><span class="badge badge-emerald">Më e larta (Ultra-Fast)</span></td>
+                            <td><span class="badge badge-cyan">E lartë</span></td>
+                            <td><span class="badge badge-purple">Mesatare / E lartë</span></td>
+                            <td><span class="badge badge-danger">Më e ulëta (Proxy i plotë)</span></td>
+                        </tr>
+                        <tr>
+                            <td>Transparenca (për Real Server)</td>
+                            <td><strong>Transparent</strong> (Sheh IP e Klientit)</td>
+                            <td><strong>Transparent</strong> (Sheh IP e Klientit)</td>
+                            <td><strong>Jo-Transparent</strong> (Sheh IP e LB)</td>
+                            <td><strong>Jo-Transparent</strong> (parazgjedhur)*</td>
+                        </tr>
+                        <tr>
+                            <td>Ndryshimet në Real Server</td>
+                            <td>Kërkohet VIP në Loopback & zgjidhja e ARP</td>
+                            <td>Kërkohet që Default Gateway të jetë LB</td>
+                            <td>Nuk ka ndryshime</td>
+                            <td>Nuk ka ndryshime</td>
+                        </tr>
+                        <tr>
+                            <td>Topologjitë e Mbështetura</td>
+                            <td>Kryesisht One-Arm</td>
+                            <td>One-Arm & Two-Arm</td>
+                            <td>One-Arm & Two-Arm</td>
+                            <td>One-Arm & Two-Arm</td>
+                        </tr>
+                        <tr>
+                            <td>Përpunimi i Paketave</td>
+                            <td>Vetëm ndryshim i MAC (L2)</td>
+                            <td>Ndryshim i Dst IP (DNAT)</td>
+                            <td>Ndryshim i Src & Dst IP</td>
+                            <td>Përfundim & Hapje e re e TCP (L7)</td>
+                        </tr>
+                        <tr>
+                            <td>Rikthimi i Trafikut</td>
+                            <td><strong>Direkt te Klienti</strong> (bypasses LB)</td>
+                            <td>Përmes Load Balancer</td>
+                            <td>Përmes Load Balancer</td>
+                            <td>Përmes Load Balancer</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="alert alert-info">
+                <i data-lucide="info" style="width: 20px; height: 20px;"></i>
+                <div>
+                    <strong>SHËNIM:</strong> Layer 7 SNAT mund të bëhet transparent duke përdorur protokolle specifike si <strong>PROXY Protocol</strong> (në HAProxy/Nginx) ose duke injektuar header-in HTTP <code>X-Forwarded-For</code> për të përcjellë IP-në reale të klientit tek aplikacioni në serverin real.
+                </div>
+            </div>
+        </div>
+
+        <!-- 2 & 3 & 4 & 5. PLAYGROUND INTERAKTIV I TOPOLOGJIVE (VISUALIZER) -->
+        <div class="section-card interactive-only" id="playground">
+            <div class="section-header">
+                <div class="section-title">
+                    <i data-lucide="play-circle" style="width: 24px; height: 24px;"></i>
+                    <h3>2. Simulatori Interaktiv i Topologjive të Rrjetit</h3>
+                </div>
+            </div>
+            <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 1.5rem;">
+                Zgjidhni njërën nga topologjitë e mëposhtme dhe klikoni <strong>"Luaj Rrjedhën"</strong> për të parë animacionin e paketës dhe për të vëzhguar se si ndryshojnë adresat IP/MAC në nivelin Layer 2 dhe Layer 3 në kohë reale gjatë çdo hop-i rrugor.
+            </p>
+
+            <!-- Toggles topologjish -->
+            <div class="topology-tabs">
+                <button class="tab-btn active" onclick="switchTopology('l4-dr-one-arm')">
+                    <span class="badge badge-emerald">L2</span> L4 DR (One-Arm)
+                </button>
+                <button class="tab-btn" onclick="switchTopology('l4-nat-two-arm')">
+                    <span class="badge badge-cyan">NAT</span> L4 NAT (Two-Arm)
+                </button>
+                <button class="tab-btn" onclick="switchTopology('l4-nat-one-arm')">
+                    <span class="badge badge-cyan">NAT</span> L4 NAT (One-Arm)
+                </button>
+                <button class="tab-btn" onclick="switchTopology('l4-snat-one-arm')">
+                    <span class="badge badge-purple">SNAT</span> L4 SNAT (One-Arm)
+                </button>
+                <button class="tab-btn" onclick="switchTopology('l4-snat-two-arm')">
+                    <span class="badge badge-purple">SNAT</span> L4 SNAT (Two-Arm)
+                </button>
+                <button class="tab-btn" onclick="switchTopology('l7-snat')">
+                    <span class="badge badge-danger">L7</span> L7 SNAT (Full Proxy)
+                </button>
+            </div>
+
+            <!-- Grid: Simulator / Monitor -->
+            <div class="playground-grid">
+                
+                <!-- Karta e Simulatorit SVG -->
+                <div class="visualizer-card">
+                    <div class="visualizer-header">
+                        <div class="status-indicator">
+                            <div class="status-dot"></div>
+                            <span id="topology-title-display">Layer 4 DR Mode - One Arm</span>
+                        </div>
+                        <span class="badge badge-cyan" id="subnet-info">Subnet: 192.168.1.0/24</span>
+                    </div>
+
+                    <!-- SVG Network Area -->
+                    <div class="svg-container">
+                        <svg class="network-canvas" viewBox="0 0 650 380">
+                            <!-- Defs për shigjeta dhe efekte glow -->
+                            <defs>
+                                <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                    <path d="M 0 2 L 10 5 L 0 8 z" fill="rgba(255,255,255,0.2)"/>
+                                </marker>
+                                <marker id="arrow-active" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                    <path d="M 0 2 L 10 5 L 0 8 z" fill="#38bdf8"/>
+                                </marker>
+                                <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                                    <feGaussianBlur stdDeviation="5" result="blur" />
+                                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                                </filter>
+                            </defs>
+
+                            <!-- Lidhjet fizike (Cables) -->
+                            <path id="path-c-r" d="M 120 200 L 220 200" class="svg-link svg-link-active" marker-end="url(#arrow)"/>
+                            <path id="path-r-lb" d="M 260 170 L 370 120" class="svg-link" marker-end="url(#arrow)"/>
+                            <path id="path-r-rs1" d="M 260 200 L 510 120" class="svg-link" marker-end="url(#arrow)" style="display:none;"/>
+                            <path id="path-r-rs2" d="M 260 200 L 510 280" class="svg-link" marker-end="url(#arrow)" style="display:none;"/>
+                            <path id="path-lb-rs1" d="M 430 110 L 510 110" class="svg-link" marker-end="url(#arrow)"/>
+                            <path id="path-lb-rs2" d="M 410 130 L 510 270" class="svg-link" marker-end="url(#arrow)"/>
+                            <path id="path-rs1-r" d="M 520 90 L 260 180" class="svg-link" marker-end="url(#arrow)" style="stroke-dasharray: 4 4; stroke: rgba(168, 85, 247, 0.4);"/>
+                            
+                            <!-- Rrjetë izolimi Two-Arm (e vizatuar sipas nevojës) -->
+                            <rect id="two-arm-net" x="460" y="50" width="180" height="280" fill="rgba(168, 85, 247, 0.03)" stroke="rgba(168, 85, 247, 0.15)" stroke-dasharray="4 4" rx="10" style="display:none;"/>
+                            <text id="two-arm-text" x="550" y="75" fill="rgba(168, 85, 247, 0.4)" font-size="10" font-family="var(--font-sans)" font-weight="700" text-anchor="middle" style="display:none;">SUBNET I BRENDSHËM PRIVAT</text>
+
+                            <!-- NYJA: KLIENTI (Client) -->
+                            <g class="svg-node" id="node-client" transform="translate(40, 160)">
+                                <rect class="node-bg" width="80" height="80" />
+                                <text class="node-title" x="40" y="30">Klienti</text>
+                                <text class="node-subtitle" x="40" y="50">198.51.100.50</text>
+                                <text class="node-subtitle" x="40" y="65">MAC: ..dd:01</text>
+                            </g>
+
+                            <!-- NYJA: RUTERI (Router) -->
+                            <g class="svg-node" id="node-router" transform="translate(200, 160)">
+                                <rect class="node-bg" width="80" height="80" />
+                                <text class="node-title" x="40" y="30">Router / GW</text>
+                                <text class="node-subtitle" x="40" y="50">192.168.1.1</text>
+                                <text class="node-subtitle" x="40" y="65">MAC: ..dd:02</text>
+                            </g>
+
+                            <!-- NYJA: LOAD BALANCER (LB) -->
+                            <g class="svg-node" id="node-lb" transform="translate(350, 70)">
+                                <rect class="node-bg" width="100" height="80" style="stroke: rgba(56, 189, 248, 0.5);" />
+                                <text class="node-title" x="50" y="25" style="fill: var(--primary);">Load Balancer</text>
+                                <text class="node-subtitle" x="50" y="45" id="lb-ip1-text">VIP: 192.168.1.100</text>
+                                <text class="node-subtitle" x="50" y="58" id="lb-ip2-text">LIP: Nuk ka</text>
+                                <text class="node-subtitle" x="50" y="70">MAC: ..dd:99</text>
+                            </g>
+
+                            <!-- NYJA: SERVER REAL 1 (RS1) -->
+                            <g class="svg-node" id="node-rs1" transform="translate(510, 70)">
+                                <rect class="node-bg node-bg-rs" width="110" height="80" />
+                                <text class="node-title" x="55" y="25">Real Server 1</text>
+                                <text class="node-subtitle" x="55" y="45">RIP: 192.168.1.10</text>
+                                <text class="node-subtitle" x="55" y="58" id="rs1-loopback-text">lo:0: 192.168.1.100</text>
+                                <text class="node-subtitle" x="55" y="70">MAC: ..ee:10</text>
+                            </g>
+
+                            <!-- NYJA: SERVER REAL 2 (RS2) -->
+                            <g class="svg-node" id="node-rs2" transform="translate(510, 230)">
+                                <rect class="node-bg node-bg-rs" width="110" height="80" />
+                                <text class="node-title" x="55" y="25">Real Server 2</text>
+                                <text class="node-subtitle" x="55" y="45">RIP: 192.168.1.20</text>
+                                <text class="node-subtitle" x="55" y="58" id="rs2-loopback-text">lo:0: 192.168.1.100</text>
+                                <text class="node-subtitle" x="55" y="70">MAC: ..ee:20</text>
+                            </g>
+
+                            <!-- Paketa Rrjetore e Animuar (Glowing Orb) -->
+                            <circle id="packet-orb" cx="80" cy="200" r="8" class="packet-dot" />
+                        </svg>
+                    </div>
+
+                    <!-- Simulator controls -->
+                    <div class="simulator-controls">
+                        <button class="sim-btn sim-btn-accent" id="btn-play" onclick="startPacketFlow()">
+                            <i data-lucide="play" style="width:16px; height:16px;"></i> Luaj Rrjedhën
+                        </button>
+                        <button class="sim-btn" id="btn-pause" onclick="pausePacketFlow()" disabled>
+                            <i data-lucide="pause" style="width:16px; height:16px;"></i> Ndalo
+                        </button>
+                        <button class="sim-btn" id="btn-step" onclick="stepPacketFlow()">
+                            <i data-lucide="skip-forward" style="width:16px; height:16px;"></i> Hapi i Radhës
+                        </button>
+                        <button class="sim-btn" id="btn-reset" onclick="resetPacketFlow()">
+                            <i data-lucide="rotate-ccw" style="width:16px; height:16px;"></i> Ristarto
+                        </button>
+                        
+                        <div class="flow-description" id="step-description">
+                            Shtypni "Luaj Rrjedhën" ose "Hapi i Radhës" për të nisur simulin e paketës.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MONITORI I HEADER-AVE (Inspektori real-time) -->
+                <div class="monitor-card">
+                    <div class="monitor-title">
+                        <h4><i data-lucide="cpu"></i> Inspektori i Header-ave (Hop: <span id="current-hop-display">0</span>)</h4>
+                        <span class="packet-stage-badge" id="packet-stage-display">IDLE / PA AKTIVITET</span>
+                    </div>
+
+                    <!-- Layer 2: Data Link (MAC Addresses) -->
+                    <div class="layer-box" id="l2-box">
+                        <div class="layer-header layer-header-l2">
+                            <span>SHTRESA 2: DATA LINK (ETHERNET II FRAME)</span>
+                            <span class="badge badge-cyan" style="font-size:0.6rem; padding: 0.1rem 0.3rem;">L2 MAC</span>
+                        </div>
+                        <div class="layer-content">
+                            <div class="header-field" id="field-src-mac">
+                                <span class="field-label">Burimi MAC (Src MAC)</span>
+                                <span class="field-value" id="val-src-mac">-</span>
+                            </div>
+                            <div class="header-field" id="field-dst-mac">
+                                <span class="field-label">Destinacioni MAC (Dst MAC)</span>
+                                <span class="field-value" id="val-dst-mac">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Layer 3: Network (IP Addresses) -->
+                    <div class="layer-box" id="l3-box">
+                        <div class="layer-header layer-header-l3">
+                            <span>SHTRESA 3: NETWORK (IP PACKET)</span>
+                            <span class="badge badge-purple" style="font-size:0.6rem; padding: 0.1rem 0.3rem;">L3 IPv4</span>
+                        </div>
+                        <div class="layer-content">
+                            <div class="header-field" id="field-src-ip">
+                                <span class="field-label">Burimi IP (Src IP)</span>
+                                <span class="field-value" id="val-src-ip">-</span>
+                            </div>
+                            <div class="header-field" id="field-dst-ip">
+                                <span class="field-label">Destinacioni IP (Dst IP)</span>
+                                <span class="field-value" id="val-dst-ip">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Layer 4 / L7 Application State -->
+                    <div class="layer-box" id="l4-box">
+                        <div class="layer-header layer-header-l4">
+                            <span>SHTRESA 4/7: SHTRESA E APLIKACIONIT & TCP</span>
+                            <span class="badge badge-amber" style="font-size:0.6rem; padding: 0.1rem 0.3rem;">L4 / L7</span>
+                        </div>
+                        <div class="layer-content" style="display:block; padding: 0.75rem;">
+                            <div id="l7-state-text" class="l7-payload">
+                                TCP Handshake jo-aktiv. Duke prit kërkesën...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- STATIK / KRIJUAR PËR PRINTIMIN PDF (Kjo pjesë zëvendëson playground kur printohet apo kur shkarkohet PDF-ja) -->
+        <div id="pdf-static-content">
+            <div class="page-break"></div>
+            <h2 style="font-size: 18pt; border-bottom: 2px solid #0f172a; padding-bottom: 0.5rem; margin-top: 2rem; color:#0f172a;">2. Analiza e Rrjedhës së Paketave sipas Modeve të Rrjetit</h2>
+            <p>Më poshtë paraqiten të gjitha diagramet e topologjive dhe konfigurimi i saktë i paketa-header-ave për secilën metodë gjatë të gjitha fazave të rrugëtimit (Klient -> Load Balancer -> Real Server -> Klient).</p>
+            
+            <!-- Static Mode 1: DR Mode -->
+            <div class="section-card">
+                <h3 style="color:#0f172a; margin-bottom:0.5rem;">2.1 Layer 4 DR Mode (Direct Routing) - One Arm</h3>
+                <p>Në modin Layer 4 DR, Load Balancer ndryshon vetëm adresën MAC të destinacionit për të përputhur me atë të Real Server (L2), pa e prekur adresën IP (L3). Serveri Real duhet të ketë VIP në loopback dhe i përgjigjet klientit direkt duke anashkaluar LB.</p>
+                <div class="pdf-svg-box">
+                    <svg viewBox="0 0 650 250" class="pdf-svg">
+                        <rect x="10" y="80" width="80" height="60" rx="6" fill="#f1f5f9" stroke="#94a3b8" stroke-width="2"/>
+                        <text x="50" y="115" fill="#0f172a" font-size="11" font-weight="700" text-anchor="middle">Klienti</text>
+                        <line x1="90" y1="110" x2="190" y2="110" stroke="#cbd5e1" stroke-width="3"/>
+                        <rect x="190" y="80" width="100" height="60" rx="6" fill="#f1f5f9" stroke="#38bdf8" stroke-width="2"/>
+                        <text x="240" y="110" fill="#0f172a" font-size="11" font-weight="700" text-anchor="middle">Load Balancer</text>
+                        <text x="240" y="125" fill="#475569" font-size="8" font-family="monospace" text-anchor="middle">VIP:192.168.1.100</text>
+                        <line x1="290" y1="100" x2="420" y2="50" stroke="#cbd5e1" stroke-width="3"/>
+                        <line x1="290" y1="120" x2="420" y2="170" stroke="#cbd5e1" stroke-width="3"/>
+                        <rect x="420" y="20" width="180" height="60" rx="6" fill="#f1f5f9" stroke="#94a3b8" stroke-width="2"/>
+                        <text x="510" y="45" fill="#0f172a" font-size="11" font-weight="700" text-anchor="middle">Real Server 1</text>
+                        <text x="510" y="60" fill="#475569" font-size="8" font-family="monospace" text-anchor="middle">RIP:192.168.1.10 | lo:0:VIP</text>
+                        <rect x="420" y="140" width="180" height="60" rx="6" fill="#f1f5f9" stroke="#94a3b8" stroke-width="2"/>
+                        <text x="510" y="165" fill="#0f172a" font-size="11" font-weight="700" text-anchor="middle">Real Server 2</text>
+                        <text x="510" y="180" fill="#475569" font-size="8" font-family="monospace" text-anchor="middle">RIP:192.168.1.20 | lo:0:VIP</text>
+                        <path d="M 420 40 L 90 90" stroke="#a855f7" stroke-width="2" stroke-dasharray="4 4" fill="none"/>
+                        <text x="250" y="55" fill="#a855f7" font-size="9" font-weight="700" text-anchor="middle">Kthimi Direkt te Klienti</text>
+                    </svg>
+                </div>
+                
+                <h4 style="margin-top:1rem; color:#0f172a;">Struktura e Paketave (IP/MAC Header) për DR Mode:</h4>
+                <table style="width:100%; border-collapse:collapse; margin-top:0.5rem; font-size:9.5pt;">
+                    <thead>
+                        <tr style="background:#f1f5f9;">
+                            <th>Hapi dhe Rruga</th>
+                            <th>Burimi IP (Src IP)</th>
+                            <th>Dest IP (Dst IP)</th>
+                            <th>Burimi MAC (Src MAC)</th>
+                            <th>Dest MAC (Dst MAC)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1. Klienti -> Ruter</td>
+                            <td>198.51.100.50</td>
+                            <td>192.168.1.100 (VIP)</td>
+                            <td>00:aa:bb:cc:dd:01 (Client)</td>
+                            <td>00:aa:bb:cc:dd:02 (Router)</td>
+                        </tr>
+                        <tr>
+                            <td>2. Ruter -> Load Balancer</td>
+                            <td>198.51.100.50</td>
+                            <td>192.168.1.100 (VIP)</td>
+                            <td>00:aa:bb:cc:dd:02 (Router)</td>
+                            <td>00:aa:bb:cc:dd:99 (LB_MAC)</td>
+                        </tr>
+                        <tr>
+                            <td>3. LB -> Real Server 1 (L2 Ndryshim)</td>
+                            <td>198.51.100.50</td>
+                            <td>192.168.1.100 (VIP)</td>
+                            <td>00:aa:bb:cc:dd:99 (LB_MAC)</td>
+                            <td>00:aa:ee:ee:ee:10 (RS1_MAC)</td>
+                        </tr>
+                        <tr>
+                            <td>4. RS1 -> Ruter (Kthim i drejtpërdrejtë)</td>
+                            <td>192.168.1.100 (VIP)</td>
+                            <td>198.51.100.50</td>
+                            <td>00:aa:ee:ee:ee:10 (RS1_MAC)</td>
+                            <td>00:aa:bb:cc:dd:02 (Router)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Static Mode 2: NAT Mode -->
+            <div class="page-break"></div>
+            <div class="section-card">
+                <h3 style="color:#0f172a; margin-bottom:0.5rem;">2.2 Layer 4 NAT Mode (Network Address Translation)</h3>
+                <p>Në modin Layer 4 NAT, Load Balancer vepron si Gateway. Kur paketa vjen te LB, destinacioni IP ndryshohet nga VIP në RIP e serverit real (DNAT), ndërsa adresa e burimit mbetet ajo e Klientit. Serverat realë duhet të kenë si Default Gateway vetë Load Balancer-in në mënyrë që trafiku i kthimit të kalojë sërish përmes LB për të zhbërë NAT-in.</p>
+                <div class="pdf-svg-box">
+                    <svg viewBox="0 0 650 220" class="pdf-svg">
+                        <rect x="10" y="80" width="80" height="60" rx="6" fill="#f1f5f9" stroke="#94a3b8" stroke-width="2"/>
+                        <text x="50" y="115" fill="#0f172a" font-size="11" font-weight="700" text-anchor="middle">Klienti</text>
+                        <line x1="90" y1="110" x2="190" y2="110" stroke="#cbd5e1" stroke-width="3"/>
+                        <rect x="190" y="60" width="120" height="100" rx="6" fill="#f1f5f9" stroke="#38bdf8" stroke-width="2"/>
+                        <text x="250" y="90" fill="#0f172a" font-size="11" font-weight="700" text-anchor="middle">Load Balancer (GW)</text>
+                        <text x="250" y="115" fill="#475569" font-size="8" font-family="monospace" text-anchor="middle">Ext VIP: 198.51.100.1</text>
+                        <text x="250" y="130" fill="#475569" font-size="8" font-family="monospace" text-anchor="middle">Int LIP: 192.168.1.1</text>
+                        <line x1="310" y1="100" x2="440" y2="50" stroke="#cbd5e1" stroke-width="3"/>
+                        <line x1="310" y1="120" x2="440" y2="170" stroke="#cbd5e1" stroke-width="3"/>
+                        <rect x="440" y="20" width="180" height="60" rx="6" fill="#f1f5f9" stroke="#94a3b8" stroke-width="2"/>
+                        <text x="530" y="45" fill="#0f172a" font-size="11" font-weight="700" text-anchor="middle">Real Server 1</text>
+                        <text x="530" y="60" fill="#475569" font-size="8" font-family="monospace" text-anchor="middle">RIP: 192.168.1.10 | GW: LB</text>
+                        <rect x="440" y="140" width="180" height="60" rx="6" fill="#f1f5f9" stroke="#94a3b8" stroke-width="2"/>
+                        <text x="530" y="165" fill="#0f172a" font-size="11" font-weight="700" text-anchor="middle">Real Server 2</text>
+                        <text x="530" y="180" fill="#475569" font-size="8" font-family="monospace" text-anchor="middle">RIP: 192.168.1.20 | GW: LB</text>
+                    </svg>
+                </div>
+                
+                <h4 style="margin-top:1rem; color:#0f172a;">Struktura e Paketave (IP/MAC Header) për NAT Two-Arm Mode:</h4>
+                <table style="width:100%; border-collapse:collapse; margin-top:0.5rem; font-size:9.5pt;">
+                    <thead>
+                        <tr style="background:#f1f5f9;">
+                            <th>Fazë dhe Rrugëtimi</th>
+                            <th>Burimi IP (Src IP)</th>
+                            <th>Dest IP (Dst IP)</th>
+                            <th>Burimi MAC (Src MAC)</th>
+                            <th>Dest MAC (Dst MAC)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1. Klienti -> LB (VIP)</td>
+                            <td>198.51.100.50</td>
+                            <td>198.51.100.1 (VIP)</td>
+                            <td>00:aa:bb:cc:dd:01 (Client)</td>
+                            <td>00:aa:bb:cc:dd:99 (LB_Ext)</td>
+                        </tr>
+                        <tr>
+                            <td>2. LB -> RS1 (DNAT i kryer)</td>
+                            <td>198.51.100.50</td>
+                            <td>192.168.1.10 (RIP1)</td>
+                            <td>00:aa:bb:cc:dd:98 (LB_Int)</td>
+                            <td>00:aa:ee:ee:ee:10 (RS1_MAC)</td>
+                        </tr>
+                        <tr>
+                            <td>3. RS1 -> LB (Përmes GW)</td>
+                            <td>192.168.1.10 (RIP1)</td>
+                            <td>198.51.100.50</td>
+                            <td>00:aa:ee:ee:ee:10 (RS1_MAC)</td>
+                            <td>00:aa:bb:cc:dd:98 (LB_Int)</td>
+                        </tr>
+                        <tr>
+                            <td>4. LB -> Klient (Zhbërje NAT)</td>
+                            <td>198.51.100.1 (VIP)</td>
+                            <td>198.51.100.50</td>
+                            <td>00:aa:bb:cc:dd:99 (LB_Ext)</td>
+                            <td>00:aa:bb:cc:dd:01 (Client)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Static Mode 3: SNAT Mode -->
+            <div class="page-break"></div>
+            <div class="section-card">
+                <h3 style="color:#0f172a; margin-bottom:0.5rem;">2.3 Layer 4 SNAT Mode (Source Network Address Translation)</h3>
+                <p>Në modin Layer 4 SNAT, Load Balancer ndryshon njëkohësisht edhe adresën IP të burimit (nga Client_IP në IP-në e brendshme të LB - LIP) dhe destinacionin IP (nga VIP në RIP). Kjo eliminon nevojën për ndryshimin e Default Gateway në Real Server, por e bën serverin të mos e shohë dot IP-në reale të klientit në shtresën e rrjetit.</p>
+                <div class="pdf-svg-box">
+                    <svg viewBox="0 0 650 200" class="pdf-svg">
+                        <rect x="10" y="80" width="80" height="60" rx="6" fill="#f1f5f9" stroke="#94a3b8" stroke-width="2"/>
+                        <text x="50" y="115" fill="#0f172a" font-size="11" font-weight="700" text-anchor="middle">Klienti</text>
+                        <line x1="90" y1="110" x2="190" y2="110" stroke="#cbd5e1" stroke-width="3"/>
+                        <rect x="190" y="60" width="130" height="100" rx="6" fill="#f1f5f9" stroke="#38bdf8" stroke-width="2"/>
+                        <text x="255" y="90" fill="#0f172a" font-size="11" font-weight="700" text-anchor="middle">Load Balancer (SNAT)</text>
+                        <text x="255" y="115" fill="#475569" font-size="8" font-family="monospace" text-anchor="middle">VIP: 192.168.1.100</text>
+                        <text x="255" y="130" fill="#475569" font-size="8" font-family="monospace" text-anchor="middle">LIP: 192.168.1.99</text>
+                        <line x1="320" y1="100" x2="450" y2="50" stroke="#cbd5e1" stroke-width="3"/>
+                        <line x1="320" y1="120" x2="450" y2="170" stroke="#cbd5e1" stroke-width="3"/>
+                        <rect x="450" y="20" width="170" height="60" rx="6" fill="#f1f5f9" stroke="#94a3b8" stroke-width="2"/>
+                        <text x="535" y="45" fill="#0f172a" font-size="11" font-weight="700" text-anchor="middle">Real Server 1</text>
+                        <text x="535" y="60" fill="#475569" font-size="8" font-family="monospace" text-anchor="middle">RIP: 192.168.1.10</text>
+                        <rect x="450" y="140" width="170" height="60" rx="6" fill="#f1f5f9" stroke="#94a3b8" stroke-width="2"/>
+                        <text x="535" y="165" fill="#0f172a" font-size="11" font-weight="700" text-anchor="middle">Real Server 2</text>
+                        <text x="535" y="180" fill="#475569" font-size="8" font-family="monospace" text-anchor="middle">RIP: 192.168.1.20</text>
+                    </svg>
+                </div>
+                
+                <h4 style="margin-top:1rem; color:#0f172a;">Struktura e Paketave (IP/MAC Header) për SNAT One-Arm:</h4>
+                <table style="width:100%; border-collapse:collapse; margin-top:0.5rem; font-size:9.5pt;">
+                    <thead>
+                        <tr style="background:#f1f5f9;">
+                            <th>Fazë dhe Rrugëtimi</th>
+                            <th>Burimi IP (Src IP)</th>
+                            <th>Dest IP (Dst IP)</th>
+                            <th>Burimi MAC (Src MAC)</th>
+                            <th>Dest MAC (Dst MAC)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1. Klienti -> LB (VIP)</td>
+                            <td>198.51.100.50</td>
+                            <td>192.168.1.100 (VIP)</td>
+                            <td>00:aa:bb:cc:dd:01 (Client)</td>
+                            <td>00:aa:bb:cc:dd:99 (LB_MAC)</td>
+                        </tr>
+                        <tr>
+                            <td>2. LB -> RS1 (SNAT & DNAT)</td>
+                            <td>192.168.1.99 (LIP)</td>
+                            <td>192.168.1.10 (RIP1)</td>
+                            <td>00:aa:bb:cc:dd:99 (LB_MAC)</td>
+                            <td>00:aa:ee:ee:ee:10 (RS1_MAC)</td>
+                        </tr>
+                        <tr>
+                            <td>3. RS1 -> LB (Kthim i thjeshtë LAN)</td>
+                            <td>192.168.1.10 (RIP1)</td>
+                            <td>192.168.1.99 (LIP)</td>
+                            <td>00:aa:ee:ee:ee:10 (RS1_MAC)</td>
+                            <td>00:aa:bb:cc:dd:99 (LB_MAC)</td>
+                        </tr>
+                        <tr>
+                            <td>4. LB -> Klient</td>
+                            <td>192.168.1.100 (VIP)</td>
+                            <td>198.51.100.50</td>
+                            <td>00:aa:bb:cc:dd:99 (LB_MAC)</td>
+                            <td>00:aa:bb:cc:dd:01 (Client)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Static Mode 4: Layer 7 Mode -->
+            <div class="page-break"></div>
+            <div class="section-card">
+                <h3 style="color:#0f172a; margin-bottom:0.5rem;">2.4 Layer 7 SNAT Mode (Application Proxy)</h3>
+                <p>Në Layer 7 SNAT, Load Balancer ndërpret plotësisht lidhjen TCP të klientit (Full Proxy), kryen analizimin e shtresës së aplikacionit (cookies, SSL terminim, rishkrim URL-sh), dhe më pas hap një lidhje krejtësisht të re TCP me Real Server. Ndarja fizike e sesioneve rrit sigurinë dhe fleksibilitetin, por kërkon më shumë CPU dhe memorie nga LB.</p>
+                <div class="pdf-svg-box">
+                    <svg viewBox="0 0 650 200" class="pdf-svg">
+                        <rect x="10" y="80" width="80" height="60" rx="6" fill="#f1f5f9" stroke="#94a3b8" stroke-width="2"/>
+                        <text x="50" y="115" fill="#0f172a" font-size="11" font-weight="700" text-anchor="middle">Klienti</text>
+                        
+                        <path d="M 90 100 L 220 100" stroke="#38bdf8" stroke-width="3"/>
+                        <text x="155" y="90" fill="#38bdf8" font-size="8" font-weight="700" text-anchor="middle">TCP Lidhja 1</text>
+                        
+                        <rect x="220" y="60" width="130" height="100" rx="6" fill="#f1f5f9" stroke="#a855f7" stroke-width="2"/>
+                        <text x="285" y="95" fill="#0f172a" font-size="11" font-weight="700" text-anchor="middle">L7 Load Balancer</text>
+                        <text x="285" y="115" fill="#475569" font-size="8" font-family="monospace" text-anchor="middle">HAProxy / Nginx</text>
+                        
+                        <path d="M 350 100 L 480 100" stroke="#a855f7" stroke-width="3"/>
+                        <text x="415" y="90" fill="#a855f7" font-size="8" font-weight="700" text-anchor="middle">TCP Lidhja 2</text>
+                        
+                        <rect x="480" y="80" width="120" height="60" rx="6" fill="#f1f5f9" stroke="#94a3b8" stroke-width="2"/>
+                        <text x="540" y="115" fill="#0f172a" font-size="11" font-weight="700" text-anchor="middle">Real Server</text>
+                    </svg>
+                </div>
+                
+                <h4 style="margin-top:1rem; color:#0f172a;">Rrjedha e Sesioneve TCP dhe Headers (L7):</h4>
+                <table style="width:100%; border-collapse:collapse; margin-top:0.5rem; font-size:9.5pt;">
+                    <thead>
+                        <tr style="background:#f1f5f9;">
+                            <th>Sesioni TCP</th>
+                            <th>Dërguesi ➔ Marrësi</th>
+                            <th>Burimi IP (Src IP)</th>
+                            <th>Dest IP (Dst IP)</th>
+                            <th>Shtresa 7 (HTTP Header)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Lidhja TCP 1 (Klient <-> LB)</td>
+                            <td>Klient ➔ LB (Kërkesa)</td>
+                            <td>198.51.100.50</td>
+                            <td>192.168.1.100 (VIP)</td>
+                            <td>GET /index.html HTTP/1.1</td>
+                        </tr>
+                        <tr>
+                            <td>Lidhja TCP 1 (Klient <-> LB)</td>
+                            <td>LB ➔ Klient (Përgjigje)</td>
+                            <td>192.168.1.100 (VIP)</td>
+                            <td>198.51.100.50</td>
+                            <td>HTTP/1.1 200 OK</td>
+                        </tr>
+                        <tr style="border-top:2px solid #cbd5e1;">
+                            <td>Lidhja TCP 2 (LB <-> Server Real)</td>
+                            <td>LB ➔ RS1 (Kërkesë e re)</td>
+                            <td>192.168.1.99 (LIP)</td>
+                            <td>192.168.1.10 (RIP1)</td>
+                            <td>GET /index.html <br><strong>X-Forwarded-For: 198.51.100.50</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Lidhja TCP 2 (LB <-> Server Real)</td>
+                            <td>RS1 ➔ LB (Përgjigje)</td>
+                            <td>192.168.1.10 (RIP1)</td>
+                            <td>192.168.1.99 (LIP)</td>
+                            <td>HTTP/1.1 200 OK</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 3. SEKSIONET DETAJUESE TË TEKSTIT -->
+        <div class="grid-2col">
+            <!-- DR Mode Info -->
+            <div class="section-card">
+                <div class="mode-card-header">
+                    <h4>Layer 4 DR Mode (Direct Routing)</h4>
+                    <span class="badge badge-emerald">Ultra-Fast</span>
+                </div>
+                <p>
+                    Në modin Layer 4 DR, Load Balancer (LB) vepron plotësisht në shtresën e dytë (Layer 2 - Data Link). LB pranon kërkesat e drejtuara nga VIP dhe pa ndryshuar IP-në e burimit ose destinacionit, modifikon adresën MAC të destinacionit duke vendosur atë të një prej Real Servers.
+                </p>
+                <ul class="feature-bullets">
+                    <li><i data-lucide="check-circle-2"></i> Përgjigjja anashkalon plotësisht LB-në duke u dërguar direkt te Klienti.</li>
+                    <li><i data-lucide="check-circle-2"></i> Ofron performancën më të lartë të mundshme në rrjet.</li>
+                    <li class="bullet-con"><i data-lucide="x-circle"></i> Kërkon që Real Serverët të kenë të konfiguruar VIP-in në Loopback.</li>
+                    <li class="bullet-con"><i data-lucide="x-circle"></i> Sfidë kritike: Zgjidhja e problemit ARP për të shmangur konfliktet IP.</li>
+                </ul>
+            </div>
+
+            <!-- NAT Mode Info -->
+            <div class="section-card">
+                <div class="mode-card-header">
+                    <h4>Layer 4 NAT Mode</h4>
+                    <span class="badge badge-cyan">Transparent</span>
+                </div>
+                <p>
+                    Në modin Layer 4 NAT, LB kryen Destination NAT (DNAT). Ndryshon adresën e destinacionit nga VIP në RIP (Real IP) të serverit. Burimi (Client IP) mbetet i pandryshuar. Real Serveri duhet patjetër të ketë Default Gateway adresën IP të brendshme të LB.
+                </p>
+                <ul class="feature-bullets">
+                    <li><i data-lucide="check-circle-2"></i> Serveri Real sheh IP-në e vërtetë të klientit pa asnjë header shtesë.</li>
+                    <li><i data-lucide="check-circle-2"></i> Mbron Real Serverët në një subnet privat të izoluar.</li>
+                    <li class="bullet-con"><i data-lucide="x-circle"></i> Trafiku i kthimit duhet të kalojë detyrimisht përmes LB.</li>
+                    <li class="bullet-con"><i data-lucide="x-circle"></i> Kërkon ndryshim të tabelës së rrugëtimit (routing/GW) në server.</li>
+                </ul>
+            </div>
+
+            <!-- SNAT Mode Info -->
+            <div class="section-card">
+                <div class="mode-card-header">
+                    <h4>Layer 4 SNAT Mode</h4>
+                    <span class="badge badge-purple">No Server Changes</span>
+                </div>
+                <p>
+                    Në modin Layer 4 SNAT, LB kryen njëkohësisht Source NAT dhe Destination NAT. Ndryshon destinacionin nga VIP në RIP dhe burimin nga Client IP në IP-në e brendshme të vetë LB (LIP).
+                </p>
+                <ul class="feature-bullets">
+                    <li><i data-lucide="check-circle-2"></i> Nuk kërkohet asnjë ndryshim rrugëzimi apo konfigurimi në Real Server.</li>
+                    <li><i data-lucide="check-circle-2"></i> Integrohet lehtësisht në rrjete ekzistuese (One-Arm).</li>
+                    <li class="bullet-con"><i data-lucide="x-circle"></i> Jo-transparent: Serverët nuk e shohin IP-në e klientit (shehin vetëm LB).</li>
+                    <li class="bullet-con"><i data-lucide="x-circle"></i> Përpunim shtesë në LB për dy modifikime IP për çdo paketë.</li>
+                </ul>
+            </div>
+
+            <!-- L7 Mode Info -->
+            <div class="section-card">
+                <div class="mode-card-header">
+                    <h4>Layer 7 SNAT Mode</h4>
+                    <span class="badge badge-danger">Application Proxy</span>
+                </div>
+                <p>
+                    Load Balancer funksionon si Full Reverse Proxy (p.sh. HAProxy/Nginx). Ndërpret lidhjen TCP me klientin, analizon kërkesën HTTP/HTTPS dhe hap një lidhje të re TCP të dytë me Real Server.
+                </p>
+                <ul class="feature-bullets">
+                    <li><i data-lucide="check-circle-2"></i> Mbështet Sticky Sessions, SSL Termination dhe URL Rewrite.</li>
+                    <li><i data-lucide="check-circle-2"></i> Siguri e shtuar duke ndarë tërësisht sesionet e jashtme me ato të brendshme.</li>
+                    <li class="bullet-con"><i data-lucide="x-circle"></i> Konsumon më shumë CPU/RAM; ka performancën më të ulët nga të katër modet.</li>
+                    <li class="bullet-con"><i data-lucide="x-circle"></i> Kërkon proxy protokol ose X-Forwarded-For për transparencë IP.</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- DETAIL ARP CRITICAL SECTION -->
+        <div class="section-card">
+            <div class="section-title" style="margin-bottom: 1rem;">
+                <i data-lucide="alert-triangle" style="color: var(--warning); width: 24px; height: 24px;"></i>
+                <h3 style="color: var(--warning);">Sfidë Kritike: "Problemi ARP" (The ARP Problem) në DR Mode</h3>
+            </div>
+            <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                Meqenëse në Direct Routing (DR), të gjithë Real Serverët kanë të njëjtën adresë VIP të konfiguruar në loopback (në mënyrë që të pranojnë paketat e dërguara nga LB), nëse ata i përgjigjen kërkesave ARP të ruterave ose pajisjeve të rrjetit për atë VIP, do të shkaktohej konflikt i tmerrshëm IP adresash. Rrjeti do të bëhej i paqëndrueshëm pasi kërkesat ARP do të shkonin në mënyrë të rastësishme te serverët në vend që të shkonin vetëm te Load Balancer.
+            </p>
+            <div class="alert alert-warning" style="margin-top:0;">
+                <i data-lucide="shield-alert" style="width:20px; height:20px; color: var(--warning);"></i>
+                <div>
+                    <strong>ZGJIDHJA:</strong> Duhet të konfigurohen parametrat e kernelit Linux në Real Serverët (në <code>/etc/sysctl.conf</code>) që të mos i përgjigjen ARP kërkesave për VIP-in në loopback dhe të mos e njoftojnë atë në rrjet:
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. PANELI I KONFIGURIMEVE TË SERVERIT -->
+        <div class="section-card" id="konfigurime">
+            <div class="section-title" style="margin-bottom: 1.5rem;">
+                <i data-lucide="terminal" style="width: 24px; height: 24px;"></i>
+                <h3>3. Konfigurimet e Serverit & Shembuj Kodi</h3>
+            </div>
+            
+            <div class="config-wrapper">
+                
+                <!-- Sidebar tabs -->
+                <div class="config-sidebar interactive-only">
+                    <button class="config-btn active" onclick="switchConfig('sysctl')">
+                        <i data-lucide="settings"></i> Linux sysctl.conf (DR)
+                    </button>
+                    <button class="config-btn" onclick="switchConfig('haproxy')">
+                        <i data-lucide="server"></i> HAProxy L7 (SNAT)
+                    </button>
+                    <button class="config-btn" onclick="switchConfig('nginx')">
+                        <i data-lucide="globe"></i> Nginx L7 Proxy
+                    </button>
+                    <button class="config-btn" onclick="switchConfig('loopback')">
+                        <i data-lucide="cpu"></i> Krijimi i VIP Loopback
+                    </button>
+                </div>
+
+                <!-- Viewer area -->
+                <div class="config-viewer">
+                    <div class="config-viewer-header">
+                        <div class="config-meta">
+                            Konfigurimi aktiv: <span id="active-config-name">/etc/sysctl.conf (Linux)</span>
+                        </div>
+                    </div>
+
+                    <div class="code-container">
+                        <button class="btn-copy" onclick="copyCode()">
+                            <i data-lucide="copy" style="width:14px; height:14px;"></i> Kopjo Kodin
+                        </button>
+                        <pre><code id="code-display"># Konfigurimi për zgjidhjen e problemit ARP në Real Servers (L4 DR Mode)
+# Shto këto rreshta në fund të skedarit /etc/sysctl.conf
+
+net.ipv4.conf.all.arp_ignore = 1
+net.ipv4.conf.all.arp_announce = 2
+net.ipv4.conf.lo.arp_ignore = 1
+net.ipv4.conf.lo.arp_announce = 2
+
+# Pasi t'i ruani, aplikoni ndryshimet me komandën:
+# sysctl -p</code></pre>
+                    </div>
+                    
+                    <p style="font-size: 0.85rem; color: var(--text-secondary);" id="config-explanation">
+                        Ky konfigurim ndalon kernelin Linux që t'u përgjigjet kërkesave ARP ose të njoftojë adresën VIP të konfiguruar në loopback, duke lejuar vetëm Load Balancer-in t'u përgjigjet kërkesave ARP të rrjetit për këtë IP.
+                    </p>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div class="toast" id="toast-notif">
+        <i data-lucide="check-circle" style="width:16px; height:16px;"></i> Kodi u kopjua me sukses!
+    </div>
+
+    <!-- FOOTER -->
+    <footer style="border-top: 1px solid var(--border-color); padding: 2rem 0; margin-top: 4rem; text-align: center; font-size: 0.85rem; color: var(--text-muted);" class="interactive-only">
+        <div class="container">
+            <p>Udhëzuesi i Plotë Interaktiv i Topologjive të Load Balancing © 2026. Mundësuar për qëllime edukative dhe inxhinierike.</p>
+        </div>
+    </footer>
+
+    <!-- ==========================================================================
+       10. JAVASCRIPT ENGINE (DYNAMICS, ANIMATION, PDF)
+       ========================================================================== */ -->
+    <script>
+        // Inicializo Lucide Icons
+        lucide.createIcons();
+
+        // ==========================================================================
+        // FILTRIMI I TABELËS
+        // ==========================================================================
+        function filterTable() {
+            const input = document.getElementById("table-search");
+            const filter = input.value.toLowerCase();
+            const table = document.getElementById("comparison-table");
+            const trs = table.getElementsByTagName("tr");
+
+            for (let i = 1; i < trs.length; i++) {
+                const tr = trs[i];
+                const cells = tr.getElementsByTagName("td");
+                let match = false;
+                
+                for (let j = 0; j < cells.length; j++) {
+                    if (cells[j].innerText.toLowerCase().indexOf(filter) > -1) {
+                        match = true;
+                        break;
+                    }
+                }
+                
+                if (match) {
+                    tr.style.display = "";
+                } else {
+                    tr.style.display = "none";
+                }
+            }
+        }
+
+        // Highlight kolonash në klikim
+        function highlightColumn(colIndex) {
+            const table = document.getElementById("comparison-table");
+            const rows = table.rows;
+            
+            // Kontrollo nëse kolona është tashmë e selektuar
+            const isAlreadyActive = rows[0].cells[colIndex].classList.contains("active-column");
+
+            // Pastro të gjitha kolonat e aktivizuara më parë
+            for (let r = 0; r < rows.length; r++) {
+                for (let c = 1; c < rows[r].cells.length; c++) {
+                    rows[r].cells[c].classList.remove("active-column");
+                }
+            }
+
+            if (!isAlreadyActive) {
+                // Shto klasën active-column për kolonën e zgjedhur
+                for (let r = 0; r < rows.length; r++) {
+                    rows[r].cells[colIndex].classList.add("active-column");
+                }
+            }
+        }
+
+        // ==========================================================================
+        // DYNAMICS E TOPOLOGJIVE & SIMULATORI I ANIMUAR
+        // ==========================================================================
+        
+        // Databaza e konfigurimit të çdo Topologjie
+        const topologies = {
+            'l4-dr-one-arm': {
+                title: 'Layer 4 DR Mode - One Arm Topology',
+                subnet: 'Subnet: 192.168.1.0/24 (Single Subnet)',
+                lbIp1: 'VIP: 192.168.1.100',
+                lbIp2: 'LIP: Nuk ka',
+                rs1loop: 'lo:0 (VIP): 192.168.1.100',
+                rs2loop: 'lo:0 (VIP): 192.168.1.100',
+                hops: [
+                    {
+                        desc: "Hapi 1: Klienti dërgon paketën te Routeri i cili është Default Gateway.",
+                        nodeStart: 'node-client',
+                        nodeEnd: 'node-router',
+                        srcIp: '198.51.100.50', dstIp: '192.168.1.100',
+                        srcMac: '00:aa:bb:cc:dd:01', dstMac: '00:aa:bb:cc:dd:02',
+                        state: 'Klienti -> Router',
+                        xStart: 80, yStart: 200, xEnd: 240, yEnd: 200,
+                        l4Payload: 'TCP [SYN] (Drejtuar te VIP)'
+                    },
+                    {
+                        desc: "Hapi 2: Routeri e dërgon paketën në LAN te Load Balancer (bazuar në ARP për VIP).",
+                        nodeStart: 'node-router',
+                        nodeEnd: 'node-lb',
+                        srcIp: '198.51.100.50', dstIp: '192.168.1.100',
+                        srcMac: '00:aa:bb:cc:dd:02', dstMac: '00:aa:bb:cc:dd:99',
+                        state: 'Router -> Load Balancer',
+                        xStart: 240, yStart: 200, xEnd: 400, yEnd: 110,
+                        l4Payload: 'TCP [SYN] (Router->LB)'
+                    },
+                    {
+                        desc: "Hapi 3: LB zgjedh RS1 dhe ndryshon VETËM adresën MAC të destinacionit te RS1 (L2 Ndryshim).",
+                        nodeStart: 'node-lb',
+                        nodeEnd: 'node-rs1',
+                        srcIp: '198.51.100.50', dstIp: '192.168.1.100',
+                        srcMac: '00:aa:bb:cc:dd:99', dstMac: '00:aa:ee:ee:ee:10',
+                        state: 'LB -> Real Server 1',
+                        xStart: 400, yStart: 110, xEnd: 565, yEnd: 110,
+                        l4Payload: 'TCP [SYN] (Dst MAC u ndryshua!)',
+                        highlightFields: ['field-dst-mac']
+                    },
+                    {
+                        desc: "Hapi 4: RS1 pranon paketën në lo:0. I përgjigjet direkt Klientit duke anashkaluar LB (Direct return).",
+                        nodeStart: 'node-rs1',
+                        nodeEnd: 'node-router',
+                        srcIp: '192.168.1.100', dstIp: '198.51.100.50',
+                        srcMac: '00:aa:ee:ee:ee:10', dstMac: '00:aa:bb:cc:dd:02',
+                        state: 'Real Server 1 -> Router',
+                        xStart: 565, yStart: 110, xEnd: 240, yEnd: 200,
+                        l4Payload: 'TCP [SYN, ACK] (Direct Return)',
+                        isReturn: true
+                    },
+                    {
+                        desc: "Hapi 5: Routeri ia përcjell paketën klientit të jashtëm. Klienti pranon përgjigjen me IP-në VIP.",
+                        nodeStart: 'node-router',
+                        nodeEnd: 'node-client',
+                        srcIp: '192.168.1.100', dstIp: '198.51.100.50',
+                        srcMac: '00:aa:bb:cc:dd:02', dstMac: '00:aa:bb:cc:dd:01',
+                        state: 'Router -> Klient (Fund)',
+                        xStart: 240, yStart: 200, xEnd: 80, yEnd: 200,
+                        l4Payload: 'TCP Lidhja u krye! (Sukses)',
+                        isReturn: true
+                    }
+                ]
+            },
+            'l4-nat-two-arm': {
+                title: 'Layer 4 NAT Mode - Two Arm Configuration',
+                subnet: 'Ext: 198.51.100.0/24 | Int: 192.168.1.0/24',
+                lbIp1: 'Ext VIP: 198.51.100.1',
+                lbIp2: 'Int LIP: 192.168.1.1',
+                rs1loop: 'lo (nuk kërkohet)',
+                rs2loop: 'lo (nuk kërkohet)',
+                hops: [
+                    {
+                        desc: "Hapi 1: Klienti i jashtëm dërgon paketën te VIP e Load Balancer-it.",
+                        nodeStart: 'node-client',
+                        nodeEnd: 'node-lb',
+                        srcIp: '198.51.100.50', dstIp: '198.51.100.1',
+                        srcMac: '00:aa:bb:cc:dd:01', dstMac: '00:aa:bb:cc:dd:99',
+                        state: 'Klient -> LB (VIP)',
+                        xStart: 80, yStart: 200, xEnd: 400, yEnd: 110,
+                        l4Payload: 'TCP [SYN] (Drejtuar te VIP)'
+                    },
+                    {
+                        desc: "Hapi 2: LB kryen DNAT duke ndryshuar destinacionin IP te RIP1. Ndryshon edhe MAC.",
+                        nodeStart: 'node-lb',
+                        nodeEnd: 'node-rs1',
+                        srcIp: '198.51.100.50', dstIp: '192.168.1.10',
+                        srcMac: '00:aa:bb:cc:dd:98', dstMac: '00:aa:ee:ee:ee:10',
+                        state: 'LB -> RS1 (DNAT)',
+                        xStart: 400, yStart: 110, xEnd: 565, yEnd: 110,
+                        l4Payload: 'TCP [SYN] (DNAT: VIP -> RIP1)',
+                        highlightFields: ['field-dst-ip', 'field-src-mac', 'field-dst-mac']
+                    },
+                    {
+                        desc: "Hapi 3: RS1 pranon paketën. Meqenëse Default Gateway është LB (Int LIP), përgjigjen ia kthen LB.",
+                        nodeStart: 'node-rs1',
+                        nodeEnd: 'node-lb',
+                        srcIp: '192.168.1.10', dstIp: '198.51.100.50',
+                        srcMac: '00:aa:ee:ee:ee:10', dstMac: '00:aa:bb:cc:dd:98',
+                        state: 'RS1 -> LB (GW)',
+                        xStart: 565, yStart: 110, xEnd: 400, yEnd: 110,
+                        l4Payload: 'TCP [SYN, ACK]',
+                        isReturn: true
+                    },
+                    {
+                        desc: "Hapi 4: LB zhbën NAT-in (ndryshon burimin IP nga RIP1 te VIP) dhe ia dërgon klientit.",
+                        nodeStart: 'node-lb',
+                        nodeEnd: 'node-client',
+                        srcIp: '198.51.100.1', dstIp: '198.51.100.50',
+                        srcMac: '00:aa:bb:cc:dd:99', dstMac: '00:aa:bb:cc:dd:01',
+                        state: 'LB -> Klient (Zhbërje NAT)',
+                        xStart: 400, yStart: 110, xEnd: 80, yEnd: 200,
+                        l4Payload: 'TCP Lidhja u krijua!',
+                        isReturn: true,
+                        highlightFields: ['field-src-ip', 'field-src-mac', 'field-dst-mac']
+                    }
+                ]
+            },
+            'l4-nat-one-arm': {
+                title: 'Layer 4 NAT Mode - One Arm Configuration',
+                subnet: 'Subnet i Përbashkët: 192.168.1.0/24',
+                lbIp1: 'VIP: 192.168.1.100',
+                lbIp2: 'Int LIP: Nuk ka',
+                rs1loop: 'lo (nuk kërkohet)',
+                rs2loop: 'lo (nuk kërkohet)',
+                hops: [
+                    {
+                        desc: "Hapi 1: Klienti i jashtëm dërgon paketën përmes Routerit drejt VIP-it të brendshëm në LAN.",
+                        nodeStart: 'node-client',
+                        nodeEnd: 'node-lb',
+                        srcIp: '198.51.100.50', dstIp: '192.168.1.100',
+                        srcMac: '00:aa:bb:cc:dd:02', dstMac: '00:aa:bb:cc:dd:99',
+                        state: 'Klient -> LB (VIP)',
+                        xStart: 80, yStart: 200, xEnd: 400, yEnd: 110,
+                        l4Payload: 'TCP [SYN] (Drejtuar te VIP)'
+                    },
+                    {
+                        desc: "Hapi 2: LB kryen DNAT duke ndryshuar destinacionin IP te RIP1. Ndryshon edhe MAC.",
+                        nodeStart: 'node-lb',
+                        nodeEnd: 'node-rs1',
+                        srcIp: '198.51.100.50', dstIp: '192.168.1.10',
+                        srcMac: '00:aa:bb:cc:dd:99', dstMac: '00:aa:ee:ee:ee:10',
+                        state: 'LB -> RS1 (DNAT)',
+                        xStart: 400, yStart: 110, xEnd: 565, yEnd: 110,
+                        l4Payload: 'TCP [SYN] (DNAT: VIP -> RIP1)',
+                        highlightFields: ['field-dst-ip', 'field-dst-mac']
+                    },
+                    {
+                        desc: "Hapi 3: RS1 pranon paketën. Edhe pse është në të njëjtin LAN, GW është LB, kështu që ia dërgon LB-së.",
+                        nodeStart: 'node-rs1',
+                        nodeEnd: 'node-lb',
+                        srcIp: '192.168.1.10', dstIp: '198.51.100.50',
+                        srcMac: '00:aa:ee:ee:ee:10', dstMac: '00:aa:bb:cc:dd:99',
+                        state: 'RS1 -> LB (Gateway)',
+                        xStart: 565, yStart: 110, xEnd: 400, yEnd: 110,
+                        l4Payload: 'TCP [SYN, ACK]',
+                        isReturn: true
+                    },
+                    {
+                        desc: "Hapi 4: LB zhbën NAT-in (ndryshon burimin nga RIP1 te VIP) dhe ia kthen Klientit përmes Routerit.",
+                        nodeStart: 'node-lb',
+                        nodeEnd: 'node-client',
+                        srcIp: '192.168.1.100', dstIp: '198.51.100.50',
+                        srcMac: '00:aa:bb:cc:dd:99', dstMac: '00:aa:bb:cc:dd:02',
+                        state: 'LB -> Klient (Zhbërje NAT)',
+                        xStart: 400, yStart: 110, xEnd: 80, yEnd: 200,
+                        l4Payload: 'TCP Lidhja u krye!',
+                        isReturn: true,
+                        highlightFields: ['field-src-ip', 'field-dst-mac']
+                    }
+                ]
+            },
+            'l4-snat-one-arm': {
+                title: 'Layer 4 SNAT Mode - One Arm Configuration',
+                subnet: 'Subnet i Përbashkët: 192.168.1.0/24',
+                lbIp1: 'VIP: 192.168.1.100',
+                lbIp2: 'LIP: 192.168.1.99',
+                rs1loop: 'lo (nuk kërkohet)',
+                rs2loop: 'lo (nuk kërkohet)',
+                hops: [
+                    {
+                        desc: "Hapi 1: Klienti dërgon paketën te VIP në LAN përmes Routerit.",
+                        nodeStart: 'node-client',
+                        nodeEnd: 'node-lb',
+                        srcIp: '198.51.100.50', dstIp: '192.168.1.100',
+                        srcMac: '00:aa:bb:cc:dd:02', dstMac: '00:aa:bb:cc:dd:99',
+                        state: 'Klient -> LB (VIP)',
+                        xStart: 80, yStart: 200, xEnd: 400, yEnd: 110,
+                        l4Payload: 'TCP [SYN] (Kërkesa te VIP)'
+                    },
+                    {
+                        desc: "Hapi 2: LB bën dy përkthime: Burimi bëhet LIP (192.168.1.99), Destinacioni bëhet RIP1 (192.168.1.10).",
+                        nodeStart: 'node-lb',
+                        nodeEnd: 'node-rs1',
+                        srcIp: '192.168.1.99', dstIp: '192.168.1.10',
+                        srcMac: '00:aa:bb:cc:dd:99', dstMac: '00:aa:ee:ee:ee:10',
+                        state: 'LB -> RS1 (SNAT & DNAT)',
+                        xStart: 400, yStart: 110, xEnd: 565, yEnd: 110,
+                        l4Payload: 'Src IP -> LIP | Dst IP -> RIP1',
+                        highlightFields: ['field-src-ip', 'field-dst-ip', 'field-dst-mac']
+                    },
+                    {
+                        desc: "Hapi 3: Real Server i përgjigjet LIP-it pasi e konsideron në të njëjtin Subnet. Kthim i thjeshtë LAN.",
+                        nodeStart: 'node-rs1',
+                        nodeEnd: 'node-lb',
+                        srcIp: '192.168.1.10', dstIp: '192.168.1.99',
+                        srcMac: '00:aa:ee:ee:ee:10', dstMac: '00:aa:bb:cc:dd:99',
+                        state: 'RS1 -> LB (Kthim LAN)',
+                        xStart: 565, yStart: 110, xEnd: 400, yEnd: 110,
+                        l4Payload: 'TCP [SYN, ACK] drejtuar LIP',
+                        isReturn: true
+                    },
+                    {
+                        desc: "Hapi 4: LB rivendos adresën VIP si burim dhe Client_IP si destinacion dhe ia dërgon klientit.",
+                        nodeStart: 'node-lb',
+                        nodeEnd: 'node-client',
+                        srcIp: '192.168.1.100', dstIp: '198.51.100.50',
+                        srcMac: '00:aa:bb:cc:dd:99', dstMac: '00:aa:bb:cc:dd:02',
+                        state: 'LB -> Klient (Zhbërje SNAT)',
+                        xStart: 400, yStart: 110, xEnd: 80, yEnd: 200,
+                        l4Payload: 'TCP Lidhja u krye! (Pa ndryshim GW)',
+                        isReturn: true,
+                        highlightFields: ['field-src-ip', 'field-dst-ip', 'field-dst-mac']
+                    }
+                ]
+            },
+            'l4-snat-two-arm': {
+                title: 'Layer 4 SNAT Mode - Two Arm Topology',
+                subnet: 'Ext: 198.51.100.0/24 | Int: 192.168.1.0/24',
+                lbIp1: 'Ext VIP: 198.51.100.1',
+                lbIp2: 'Int LIP: 192.168.1.99',
+                rs1loop: 'lo (nuk kërkohet)',
+                rs2loop: 'lo (nuk kërkohet)',
+                hops: [
+                    {
+                        desc: "Hapi 1: Klienti i jashtëm dërgon paketën te VIP në ndërfaqen e jashtme të LB.",
+                        nodeStart: 'node-client',
+                        nodeEnd: 'node-lb',
+                        srcIp: '198.51.100.50', dstIp: '198.51.100.1',
+                        srcMac: '00:aa:bb:cc:dd:01', dstMac: '00:aa:bb:cc:dd:99',
+                        state: 'Klient -> LB (Ext VIP)',
+                        xStart: 80, yStart: 200, xEnd: 400, yEnd: 110,
+                        l4Payload: 'TCP [SYN] te VIP'
+                    },
+                    {
+                        desc: "Hapi 2: LB kryen SNAT/DNAT: Burimi ndryshohet te LIP i brendshëm, destinacioni te RIP1.",
+                        nodeStart: 'node-lb',
+                        nodeEnd: 'node-rs1',
+                        srcIp: '192.168.1.99', dstIp: '192.168.1.10',
+                        srcMac: '00:aa:bb:cc:dd:98', dstMac: '00:aa:ee:ee:ee:10',
+                        state: 'LB -> RS1 (SNAT & DNAT)',
+                        xStart: 400, yStart: 110, xEnd: 565, yEnd: 110,
+                        l4Payload: 'Src -> LIP | Dst -> RIP1',
+                        highlightFields: ['field-src-ip', 'field-dst-ip', 'field-src-mac', 'field-dst-mac']
+                    },
+                    {
+                        desc: "Hapi 3: Real Server i përgjigjet LIP direkt. Nuk mbështetet te GW i serverit.",
+                        nodeStart: 'node-rs1',
+                        nodeEnd: 'node-lb',
+                        srcIp: '192.168.1.10', dstIp: '192.168.1.99',
+                        srcMac: '00:aa:ee:ee:ee:10', dstMac: '00:aa:bb:cc:dd:98',
+                        state: 'RS1 -> LB (Përgjigje LIP)',
+                        xStart: 565, yStart: 110, xEnd: 400, yEnd: 110,
+                        l4Payload: 'TCP [SYN, ACK]',
+                        isReturn: true
+                    },
+                    {
+                        desc: "Hapi 4: LB bën zhbërjen e NAT dhe ia kthen përgjigjen përfundimtare Klientit.",
+                        nodeStart: 'node-lb',
+                        nodeEnd: 'node-client',
+                        srcIp: '198.51.100.1', dstIp: '198.51.100.50',
+                        srcMac: '00:aa:bb:cc:dd:99', dstMac: '00:aa:bb:cc:dd:01',
+                        state: 'LB -> Klient (Zhbërje)',
+                        xStart: 400, yStart: 110, xEnd: 80, yEnd: 200,
+                        l4Payload: 'TCP Lidhja u krye! (Sukses SNAT)',
+                        isReturn: true,
+                        highlightFields: ['field-src-ip', 'field-dst-ip', 'field-src-mac', 'field-dst-mac']
+                    }
+                ]
+            },
+            'l7-snat': {
+                title: 'Layer 7 SNAT Mode - Application Proxy (Full Proxy)',
+                subnet: 'Subnet i Përbashkët: 192.168.1.0/24',
+                lbIp1: 'VIP: 192.168.1.100',
+                lbIp2: 'LIP: 192.168.1.99',
+                rs1loop: 'lo (nuk kërkohet)',
+                rs2loop: 'lo (nuk kërkohet)',
+                hops: [
+                    {
+                        desc: "Hapi 1: Klienti ndërton lidhjen e parë TCP (TCP SYN) me VIP-in e Load Balancer-it.",
+                        nodeStart: 'node-client',
+                        nodeEnd: 'node-lb',
+                        srcIp: '198.51.100.50', dstIp: '192.168.1.100',
+                        srcMac: '00:aa:bb:cc:dd:02', dstMac: '00:aa:bb:cc:dd:99',
+                        state: 'Klient -> LB (TCP 1)',
+                        xStart: 80, yStart: 200, xEnd: 400, yEnd: 110,
+                        l4Payload: 'LIDHJA 1: TCP [SYN]'
+                    },
+                    {
+                        desc: "Hapi 2: LB I PËRGJIGJET Klientit vetë! Kryen TCP Handshake direkt (SYN-ACK) dhe terminon lidhjen.",
+                        nodeStart: 'node-lb',
+                        nodeEnd: 'node-client',
+                        srcIp: '192.168.1.100', dstIp: '198.51.100.50',
+                        srcMac: '00:aa:bb:cc:dd:99', dstMac: '00:aa:bb:cc:dd:02',
+                        state: 'LB -> Klient (TCP 1 ACK)',
+                        xStart: 400, yStart: 110, xEnd: 80, yEnd: 200,
+                        l4Payload: 'LIDHJA 1: TCP [SYN, ACK] - LB Terminon!',
+                        isReturn: true
+                    },
+                    {
+                        desc: "Hapi 3: Pasi lexon kërkesën HTTP, LB hap një Lidhje të Re të Dytë TCP (TCP 2) me Serverin Real.",
+                        nodeStart: 'node-lb',
+                        nodeEnd: 'node-rs1',
+                        srcIp: '192.168.1.99', dstIp: '192.168.1.10',
+                        srcMac: '00:aa:bb:cc:dd:99', dstMac: '00:aa:ee:ee:ee:10',
+                        state: 'LB -> RS1 (TCP 2 SYN)',
+                        xStart: 400, yStart: 110, xEnd: 565, yEnd: 110,
+                        l4Payload: 'LIDHJA 2: TCP [SYN] (Injekton X-Forwarded-For)',
+                        highlightFields: ['field-src-ip', 'field-dst-ip', 'field-dst-mac']
+                    },
+                    {
+                        desc: "Hapi 4: RS1 i përgjigjet LB-së duke kompletuar Lidhjen e Dytë TCP.",
+                        nodeStart: 'node-rs1',
+                        nodeEnd: 'node-lb',
+                        srcIp: '192.168.1.10', dstIp: '192.168.1.99',
+                        srcMac: '00:aa:ee:ee:ee:10', dstMac: '00:aa:bb:cc:dd:99',
+                        state: 'RS1 -> LB (TCP 2 ACK)',
+                        xStart: 565, yStart: 110, xEnd: 400, yEnd: 110,
+                        l4Payload: 'LIDHJA 2: TCP [SYN, ACK] kryhet.',
+                        isReturn: true
+                    },
+                    {
+                        desc: "Hapi 5: LB merr përgjigjen HTTP nga RS1 dhe përmes lidhjes së parë TCP ia përcjell Klientit.",
+                        nodeStart: 'node-lb',
+                        nodeEnd: 'node-client',
+                        srcIp: '192.168.1.100', dstIp: '198.51.100.50',
+                        srcMac: '00:aa:bb:cc:dd:99', dstMac: '00:aa:bb:cc:dd:02',
+                        state: 'LB -> Klient (HTTP Resp)',
+                        xStart: 400, yStart: 110, xEnd: 80, yEnd: 200,
+                        l4Payload: 'HTTP/1.1 200 OK (Proxy i plotë L7!)',
+                        isReturn: true
+                    }
+                ]
+            }
+        };
+
+        let currentTopologyKey = 'l4-dr-one-arm';
+        let currentHopIndex = -1;
+        let animationFrameId = null;
+        let animationProgress = 0;
+        let isPlaying = false;
+        let activeHop = null;
+
+        // Switch ndërmjet topologjive
+        function switchTopology(topoKey) {
+            resetPacketFlow();
+            currentTopologyKey = topoKey;
+            
+            // Përditëso butonat aktive
+            const buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            
+            // Gjej butonin aktiv bazuar në topoKey
+            const eventTarget = Array.from(buttons).find(btn => btn.getAttribute('onclick').includes(topoKey));
+            if (eventTarget) eventTarget.classList.add('active');
+
+            const topo = topologies[topoKey];
+            
+            // Përditëso titujt
+            document.getElementById('topology-title-display').innerText = topo.title;
+            document.getElementById('subnet-info').innerText = topo.subnet;
+            
+            // Ndrysho diagramin SVG
+            updateSvgElements(topoKey, topo);
+        }
+
+        // Përditëso vizatimin SVG bazuar në topologji
+        function updateSvgElements(topoKey, topo) {
+            // Ndrysho IP/Port e LB
+            document.getElementById('lb-ip1-text').innerText = topo.lbIp1;
+            document.getElementById('lb-ip2-text').innerText = topo.lbIp2;
+            
+            // Ndrysho loopback te Real Serverët
+            const rs1LoopText = document.getElementById('rs1-loopback-text');
+            const rs2LoopText = document.getElementById('rs2-loopback-text');
+            
+            if (topoKey === 'l4-dr-one-arm') {
+                rs1LoopText.innerText = topo.rs1loop;
+                rs2LoopText.innerText = topo.rs2loop;
+                rs1LoopText.style.display = "";
+                rs2LoopText.style.display = "";
+            } else {
+                rs1LoopText.style.display = "none";
+                rs2LoopText.style.display = "none";
+            }
+
+            // Përshtat rrugët/paths në SVG
+            const pathLB_RS2 = document.getElementById('path-lb-rs2');
+            const pathRS1_R = document.getElementById('path-rs1-r');
+            const twoArmNet = document.getElementById('two-arm-net');
+            const twoArmText = document.getElementById('two-arm-text');
+            const nodeRouter = document.getElementById('node-router');
+            
+            // Për DR Mode, shfaq rrugën direkte të kthimit
+            if (topoKey === 'l4-dr-one-arm') {
+                pathRS1_R.style.display = "";
+            } else {
+                pathRS1_R.style.display = "none";
+            }
+
+            // Për modelet Two-Arm
+            if (topoKey.includes('two-arm')) {
+                twoArmNet.style.display = "";
+                twoArmText.style.display = "";
+            } else {
+                twoArmNet.style.display = "none";
+                twoArmText.style.display = "none";
+            }
+            
+            // Rivendos paketën në pikën fillestare
+            const packet = document.getElementById('packet-orb');
+            packet.style.visibility = 'hidden';
+            packet.setAttribute('cx', 80);
+            packet.setAttribute('cy', 200);
+            
+            // Pastro monitorin
+            clearMonitor();
+        }
+
+        // Pastro monitorin e header-ave
+        function clearMonitor() {
+            document.getElementById('current-hop-display').innerText = '0';
+            document.getElementById('packet-stage-display').innerText = 'IDLE / PA AKTIVITET';
+            document.getElementById('val-src-mac').innerText = '-';
+            document.getElementById('val-dst-mac').innerText = '-';
+            document.getElementById('val-src-ip').innerText = '-';
+            document.getElementById('val-dst-ip').innerText = '-';
+            document.getElementById('l7-state-text').innerText = 'TCP Handshake jo-aktiv. Duke prit kërkesën...';
+            
+            // Hiq ndriçimet e klasave
+            const fields = document.querySelectorAll('.header-field');
+            fields.forEach(f => f.classList.remove('flashing'));
+        }
+
+        // ==========================================================================
+        // ANIMATION ENGINE (rAF)
+        // ==========================================================================
+        function animatePacket(xStart, yStart, xEnd, yEnd, duration, isReturn, callback) {
+            const packet = document.getElementById('packet-orb');
+            packet.style.visibility = 'visible';
+            
+            if (isReturn) {
+                packet.classList.add('packet-dot-return');
+            } else {
+                packet.classList.remove('packet-dot-return');
+            }
+
+            const startTime = performance.now();
+            isPlaying = true;
+
+            function updateAnimation(currentTime) {
+                if (!isPlaying) return; // Nëse pausohet
+                
+                const elapsedTime = currentTime - startTime;
+                const progress = Math.min(elapsedTime / duration, 1);
+                
+                // Kalkulo pozicionin linear
+                const currentX = xStart + (xEnd - xStart) * progress;
+                const currentY = yStart + (yEnd - yStart) * progress;
+                
+                packet.setAttribute('cx', currentX);
+                packet.setAttribute('cy', currentY);
+                
+                if (progress < 1) {
+                    animationFrameId = requestAnimationFrame(updateAnimation);
+                } else {
+                    isPlaying = false;
+                    callback();
+                }
+            }
+            
+            animationFrameId = requestAnimationFrame(updateAnimation);
+        }
+
+        // Nis Rrjedhën e Paketave
+        function startPacketFlow() {
+            if (isPlaying) return;
+            
+            document.getElementById('btn-play').disabled = true;
+            document.getElementById('btn-pause').disabled = false;
+            document.getElementById('btn-step').disabled = true;
+            
+            const topo = topologies[currentTopologyKey];
+            
+            function runNextHop() {
+                currentHopIndex++;
+                if (currentHopIndex < topo.hops.length) {
+                    executeHop(currentHopIndex, () => {
+                        // Kalo te hapi tjetër pas një pauze të shkurtër
+                        setTimeout(() => {
+                            if (isPlaying) runNextHop();
+                        }, 1200);
+                    });
+                } else {
+                    resetPacketFlow();
+                }
+            }
+            
+            isPlaying = true;
+            if (currentHopIndex === -1) {
+                runNextHop();
+            } else {
+                // Vazhdo aty ku ishte
+                executeHop(currentHopIndex, runNextHop);
+            }
+        }
+
+        // Ndalo Rrjedhën
+        function pausePacketFlow() {
+            isPlaying = false;
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+            }
+            document.getElementById('btn-play').disabled = false;
+            document.getElementById('btn-pause').disabled = true;
+            document.getElementById('btn-step').disabled = false;
+        }
+
+        // Hapi i radhës (Manual Step)
+        function stepPacketFlow() {
+            const topo = topologies[currentTopologyKey];
+            currentHopIndex++;
+            
+            if (currentHopIndex < topo.hops.length) {
+                executeHop(currentHopIndex, () => {
+                    isPlaying = false;
+                    document.getElementById('btn-play').disabled = false;
+                });
+            } else {
+                resetPacketFlow();
+            }
+        }
+
+        // Reset
+        function resetPacketFlow() {
+            pausePacketFlow();
+            currentHopIndex = -1;
+            const packet = document.getElementById('packet-orb');
+            packet.style.visibility = 'hidden';
+            packet.setAttribute('cx', 80);
+            packet.setAttribute('cy', 200);
+            
+            document.getElementById('btn-play').disabled = false;
+            document.getElementById('btn-pause').disabled = true;
+            document.getElementById('btn-step').disabled = false;
+            document.getElementById('step-description').innerText = 'Shtypni "Luaj Rrjedhën" ose "Hapi i Radhës" për të nisur simulin e paketës.';
+            
+            // Pastro vizatimin e nyjeve active
+            const nodeBgs = document.querySelectorAll('.node-bg');
+            nodeBgs.forEach(bg => bg.classList.remove('node-bg-active'));
+
+            clearMonitor();
+        }
+
+        // Ekzekuto Hopin specifik
+        function executeHop(index, onComplete) {
+            const topo = topologies[currentTopologyKey];
+            const hop = topo.hops[index];
+            activeHop = hop;
+            
+            // Përditëso përshkrimin
+            document.getElementById('step-description').innerText = hop.desc;
+            document.getElementById('current-hop-display').innerText = (index + 1).toString();
+            document.getElementById('packet-stage-display').innerText = hop.state.toUpperCase();
+            
+            // Ndriço nyjet aktive në SVG
+            const nodeBgs = document.querySelectorAll('.node-bg');
+            nodeBgs.forEach(bg => bg.classList.remove('node-bg-active'));
+            
+            const activeNodeStart = document.getElementById(hop.nodeStart);
+            const activeNodeEnd = document.getElementById(hop.nodeEnd);
+            
+            if (activeNodeStart) activeNodeStart.querySelector('.node-bg').classList.add('node-bg-active');
+            if (activeNodeEnd) activeNodeEnd.querySelector('.node-bg').classList.add('node-bg-active');
+
+            // Fillo animacionin e orbit
+            animatePacket(hop.xStart, hop.yStart, hop.xEnd, hop.yEnd, 1000, hop.isReturn, () => {
+                // Kur përfundon animacioni, përditëso monitorin e header-ave
+                updateHeaderMonitor(hop);
+                if (onComplete) onComplete();
+            });
+        }
+
+        // Përditëso Monitorin e Header-ave me vlerat e hop-it aktiv
+        function updateHeaderMonitor(hop) {
+            // Pastro flash-et e mëparshme
+            const fields = document.querySelectorAll('.header-field');
+            fields.forEach(f => f.classList.remove('flashing'));
+
+            // Vendos vlerat e reja
+            const srcMac = document.getElementById('val-src-mac');
+            const dstMac = document.getElementById('val-dst-mac');
+            const srcIp = document.getElementById('val-src-ip');
+            const dstIp = document.getElementById('val-dst-ip');
+            const l7Text = document.getElementById('l7-state-text');
+
+            // Kontrollo ndryshimet për t'i theksuar/flashuar
+            const prevSrcMac = srcMac.innerText;
+            const prevDstMac = dstMac.innerText;
+            const prevSrcIp = srcIp.innerText;
+            const prevDstIp = dstIp.innerText;
+
+            srcMac.innerText = hop.srcMac;
+            dstMac.innerText = hop.dstMac;
+            srcIp.innerText = hop.srcIp;
+            dstIp.innerText = hop.dstIp;
+            l7Text.innerText = hop.l4Payload;
+
+            // Ndriço vlerat që janë modifikuar saktësisht
+            if (prevSrcMac !== '-' && prevSrcMac !== hop.srcMac) {
+                document.getElementById('field-src-mac').classList.add('flashing');
+            }
+            if (prevDstMac !== '-' && prevDstMac !== hop.dstMac) {
+                document.getElementById('field-dst-mac').classList.add('flashing');
+            }
+            if (prevSrcIp !== '-' && prevSrcIp !== hop.srcIp) {
+                document.getElementById('field-src-ip').classList.add('flashing');
+            }
+            if (prevDstIp !== '-' && prevDstIp !== hop.dstIp) {
+                document.getElementById('field-dst-ip').classList.add('flashing');
+            }
+            
+            // Nëse ka fusha specifike për t'u ndriçuar (nga config)
+            if (hop.highlightFields) {
+                hop.highlightFields.forEach(fieldId => {
+                    document.getElementById(fieldId).classList.add('flashing');
+                });
+            }
+        }
+
+        // ==========================================================================
+        // SYSTEM KONFIGURIMET (TAB ACTIONS)
+        // ==========================================================================
+        const configs = {
+            'sysctl': {
+                name: '/etc/sysctl.conf (Linux)',
+                code: `# Konfigurimi për zgjidhjen e problemit ARP në Real Servers (L4 DR Mode)
+# Shto këto rreshta në fund të skedarit /etc/sysctl.conf
+
+net.ipv4.conf.all.arp_ignore = 1
+net.ipv4.conf.all.arp_announce = 2
+net.ipv4.conf.lo.arp_ignore = 1
+net.ipv4.conf.lo.arp_announce = 2
+
+# Pasi t'i ruani, aplikoni ndryshimet me komandën:
+# sysctl -p`,
+                explain: 'Ky konfigurim ndalon kernelin Linux që t\'u përgjigjet kërkesave ARP ose të njoftojë adresën VIP të konfiguruar në loopback, duke lejuar vetëm Load Balancer-in t\'u përgjigjet kërkesave ARP të rrjetit për këtë IP.'
+            },
+            'haproxy': {
+                name: '/etc/haproxy/haproxy.cfg (L7 SNAT & PROXY Protocol)',
+                code: `global
+    log /dev/log local0
+
+defaults
+    log     global
+    mode    http
+    timeout connect 5s
+    timeout client  50s
+    timeout server  50s
+
+frontend http_front
+    bind 192.168.1.100:80
+    # Injekto Proxy Protocol për transparencë të plotë
+    default_backend web_servers
+
+backend web_servers
+    balance roundrobin
+    # send-proxy përdoret për të përcjellë IP-në reale te serverat që e mbështesin
+    server web1 192.168.1.10:80 send-proxy check
+    server web2 192.168.1.20:80 send-proxy check`,
+                explain: 'Konfigurimi bazë i HAProxy në Layer 7. Load Balancer terminon lidhjen http dhe shpërndan sesionin përmes Round Robin. Përdoret "send-proxy" për të siguruar transmetimin e IP reale të klientit.'
+            },
+            'nginx': {
+                name: '/etc/nginx/nginx.conf (L7 Reverse Proxy & Headers)',
+                code: `http {
+    upstream backend_servers {
+        server 192.168.1.10:80 max_fails=3 fail_timeout=10s;
+        server 192.168.1.20:80 max_fails=3 fail_timeout=10s;
+    }
+
+    server {
+        listen 192.168.1.100:80;
+
+        location / {
+            proxy_pass http://backend_servers;
+            
+            # Injekto IP-në e vërtetë të Klientit në HTTP Header
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+    }
+}`,
+                explain: 'Konfigurimi klasik i Nginx si reverse proxy. Header-i "X-Forwarded-For" injektohet me vlerën e IP-së reale të klientit, në mënyrë që kodi i aplikacionit në serverin e pasmë (backend) ta shohë dhe ta regjistrojë atë saktë.'
+            },
+            'loopback': {
+                name: 'Konfigurimi i Ndërfaqes Loopback lo:0 (Linux)',
+                code: `# Krijimi i një ndërfaqeje virtuale loopback për të pranuar adresën VIP
+# Ekzekutoni këtë komandë në secilin Real Server (i përkohshëm):
+ip addr add 192.168.1.100/32 dev lo label lo:0
+
+# Për ta bërë të përhershëm në Debian/Ubuntu (/etc/network/interfaces):
+auto lo:0
+iface lo:0 inet static
+    address 192.168.1.100
+    netmask 255.255.255.255`,
+                explain: 'Adresa VIP duhet të instalohet në loopback-un e çdo serveri real në modin DR. Rrjeta "/32" përdoret në mënyrë që serveri ta konsiderojë VIP-in si një IP lokale pa bërë njoftime në ndërfaqet e jashtme fizike.'
+            }
+        };
+
+        function switchConfig(configKey) {
+            const cfg = configs[configKey];
+            
+            // Përditëso butonat
+            const buttons = document.querySelectorAll('.config-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            
+            // Shto active te butoni i klikuar duke e gjetur sipas key
+            const activeBtn = Array.from(buttons).find(btn => btn.getAttribute('onclick').includes(configKey));
+            if (activeBtn) activeBtn.classList.add('active');
+
+            // Përditëso kodin dhe titullin
+            document.getElementById('active-config-name').innerText = cfg.name;
+            document.getElementById('code-display').innerText = cfg.code;
+            document.getElementById('config-explanation').innerText = cfg.explain;
+        }
+
+        // Kopjo kodin në Clipboard
+        function copyCode() {
+            const codeText = document.getElementById('code-display').innerText;
+            navigator.clipboard.writeText(codeText).then(() => {
+                const toast = document.getElementById('toast-notif');
+                toast.classList.add('show');
+                
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 2500);
+            });
+        }
+
+        // ==========================================================================
+        // 11. PDF HIGH-FIDELITY GENERATOR (html2pdf.js integration)
+        // ==========================================================================
+        function downloadPDF() {
+            const element = document.body;
+            
+            // Shto klasën speciale pdf-mode për të ri-stilizuar faqen për PDF (background i bardhë, tekst i zi, shfaq diagramet)
+            element.classList.add('pdf-mode');
+            
+            // Konfiguro opsionet e html2pdf
+            const opt = {
+                margin:       [0.4, 0.4, 0.4, 0.4],
+                filename:     'Udhezuesi_i_Load_Balancing.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true, logging: false },
+                jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' },
+                pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
+            };
+
+            // Krijo dhe shkarko PDF-në
+            html2pdf().set(opt).from(element).save().then(() => {
+                // Rivendos pamjen e faqes në mënyrë interaktive pas shkarkimit
+                element.classList.remove('pdf-mode');
+            }).catch(err => {
+                console.error("Gabim gjatë gjenerimit të PDF:", err);
+                element.classList.remove('pdf-mode');
+                alert("Ndodhi një gabim gjatë gjenerimit të PDF-së. Ju lutem provoni përsëri ose përdorni butonin 'Shtyp'.");
+            });
+        }
+    </script>
+</body>
+</html>
